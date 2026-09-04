@@ -20,6 +20,28 @@ mongoose.connect(process.env.MONGO_URI)
 // 2. Initialize Groq AI Client
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
+// Helper to safely get an active model ID
+async function getValidModel() {
+  try {
+    const modelsList = await groq.models.list();
+    const available = modelsList.data.map((m) => m.id);
+    console.log('Available Groq Models on your key:', available);
+
+    // Preferred order
+    const candidates = [
+      'llama-3.3-70b-versatile',
+      'llama-3.1-8b-instant',
+      'openai/gpt-oss-20b',
+    ];
+
+    const matched = candidates.find((model) => available.includes(model));
+    return matched || available[0] || 'llama-3.3-70b-versatile';
+  } catch (err) {
+    console.warn('Could not fetch dynamic models list, using default fallback.');
+    return 'llama-3.3-70b-versatile';
+  }
+}
+
 // 3. AI Email Generation & SMTP Dispatch Endpoint
 app.post('/api/generate-email', async (req, res) => {
   const { sender, recipient, prompt } = req.body;
@@ -29,7 +51,10 @@ app.post('/api/generate-email', async (req, res) => {
   }
 
   try {
-    // Generate AI content using Groq (llama3-8b-8192)
+    const selectedModel = await getValidModel();
+    console.log(`Generating email using Groq model: ${selectedModel}`);
+
+    // Generate AI content using Groq
     const completion = await groq.chat.completions.create({
       messages: [
         {
@@ -41,7 +66,7 @@ app.post('/api/generate-email', async (req, res) => {
           content: `Write an email based on this prompt: "${prompt}". Recipient is ${recipient}.`,
         },
       ],
-      model: 'llama3-8b-8192',
+      model: selectedModel,
       response_format: { type: 'json_object' },
     });
 
