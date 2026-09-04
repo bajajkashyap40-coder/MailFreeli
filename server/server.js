@@ -29,7 +29,7 @@ app.post('/api/generate-email', async (req, res) => {
   }
 
   try {
-    // Generate AI content using Groq (llama-3.1-8b-instant)
+    // Generate AI content using Groq (llama3-8b-8192)
     const completion = await groq.chat.completions.create({
       messages: [
         {
@@ -41,7 +41,7 @@ app.post('/api/generate-email', async (req, res) => {
           content: `Write an email based on this prompt: "${prompt}". Recipient is ${recipient}.`,
         },
       ],
-      model: 'llama-3.1-8b-instant',
+      model: 'llama3-8b-8192',
       response_format: { type: 'json_object' },
     });
 
