@@ -17,10 +17,10 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB connected successfully'))
   .catch((err) => console.error('MongoDB Connection Error:', err));
 
-// Initialize Groq AI Client
+// 2. Initialize Groq AI Client
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-// 2. AI Email Generation & SMTP Dispatch Endpoint
+// 3. AI Email Generation & SMTP Dispatch Endpoint
 app.post('/api/generate-email', async (req, res) => {
   const { sender, recipient, prompt } = req.body;
 
@@ -29,7 +29,7 @@ app.post('/api/generate-email', async (req, res) => {
   }
 
   try {
-    // Generate AI content using Groq
+    // Generate AI content using Groq (llama-3.1-8b-instant)
     const completion = await groq.chat.completions.create({
       messages: [
         {
@@ -41,7 +41,7 @@ app.post('/api/generate-email', async (req, res) => {
           content: `Write an email based on this prompt: "${prompt}". Recipient is ${recipient}.`,
         },
       ],
-      model: 'llama-3.3-70b-versatile',
+      model: 'llama-3.1-8b-instant',
       response_format: { type: 'json_object' },
     });
 
