@@ -124,14 +124,29 @@ export default function App() {
 
   return (
     <div style={styles.container}>
+      {/* Global Style Reset & Scrollbar Control */}
       <style>{`
         * {
           box-sizing: border-box;
         }
-        body {
+        html, body {
           margin: 0;
           padding: 0;
+          width: 100%;
+          min-height: 100vh;
+          overflow-x: hidden;
           background-color: #FAF7F2;
+        }
+        /* Sleek custom scrollbars */
+        ::-webkit-scrollbar {
+          width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+          background: #FAF7F2;
+        }
+        ::-webkit-scrollbar-thumb {
+          background: #E2D9CF;
+          border-radius: 4px;
         }
         @keyframes pulseGlow {
           0% { transform: scale(1) translate(0px, 0px); opacity: 0.4; }
@@ -358,7 +373,7 @@ const styles = {
     width: '100%',
     padding: '28px 40px',
     position: 'relative',
-    overflowX: 'hidden',
+    overflow: 'hidden',
     fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   },
   bgGlow1: {
