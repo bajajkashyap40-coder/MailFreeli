@@ -4,17 +4,24 @@ export default function App() {
   const [sender, setSender] = useState('');
   const [recipient, setRecipient] = useState('');
   const [prompt, setPrompt] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [generatedEmail, setGeneratedEmail] = useState(null);
+  const [meetingLink, setMeetingLink] = useState('');
+  
+  // Editable Preview States
+  const [subject, setSubject] = useState('');
+  const [body, setBody] = useState('');
+  const [isDispatched, setIsDispatched] = useState(false);
+
+  const [generating, setGenerating] = useState(false);
+  const [dispatching, setDispatching] = useState(false);
   const [tokenCount, setTokenCount] = useState(0);
+
   const [stats, setStats] = useState({
-    completionRate: '99.2%',
+    completionRate: '100.0%',
     activeQueue: '0',
     velocity: '0.24s',
     totalLogs: '0',
   });
 
-  // Fetch real stats on load
   const fetchStats = async () => {
     try {
       const res = await fetch('http://localhost:5000/api/stats');
@@ -35,48 +42,87 @@ export default function App() {
     setPrompt(text);
   };
 
-  const handleGenerateAndSend = async () => {
+  // Step 1: Generate Draft ONLY
+  const handleGenerateDraft = async () => {
     if (!recipient || !prompt) {
       alert('Please fill in both recipient email and prompt!');
       return;
     }
 
-    setLoading(true);
+    setGenerating(true);
+    setIsDispatched(false);
+
     try {
-      const response = await fetch('http://localhost:5000/api/generate-email', {
+      const response = await fetch('http://localhost:5000/api/generate-draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recipient, prompt, meetingLink }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSubject(data.subject);
+        setBody(data.body);
+        setTokenCount(Math.floor(Math.random() * 50) + 250);
+      } else {
+        alert(`Error: ${data.error}`);
+      }
+    } catch (error) {
+      alert('Failed to generate draft. Check server console.');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  // Step 2: Dispatch Final Edited Draft
+  const handleDispatchEmail = async () => {
+    if (!recipient || !subject || !body) {
+      alert('Missing email content to dispatch!');
+      return;
+    }
+
+    setDispatching(true);
+
+    try {
+      const response = await fetch('http://localhost:5000/api/dispatch-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           sender: sender || 'you@yourcompany.com',
           recipient,
           prompt,
+          subject,
+          body,
         }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        setGeneratedEmail({
-          subject: data.subject,
-          body: data.body,
-          sender: data.sender,
-          recipient: data.recipient,
-        });
-        setTokenCount(Math.floor(Math.random() * 50) + 250);
-        fetchStats(); // Refresh metrics after successful dispatch
+        setIsDispatched(true);
+        alert('Email dispatched successfully via SMTP!');
+        fetchStats();
       } else {
         alert(`Error: ${data.error}`);
       }
     } catch (error) {
-      alert('Failed to dispatch email. Check server console.');
+      alert('Failed to dispatch email.');
     } finally {
-      setLoading(false);
+      setDispatching(false);
+    }
+  };
+
+  // Auto-replace placeholder link if typed after generating
+  const handleLinkChange = (newLink) => {
+    setMeetingLink(newLink);
+    if (body.includes('<YOUR_CALENDAR_LINK_HERE>') && newLink.trim() !== '') {
+      setBody(body.replace('<YOUR_CALENDAR_LINK_HERE>', newLink));
     }
   };
 
   return (
     <div style={styles.container}>
-      {/* Top Header */}
       <header style={styles.header}>
         <div style={styles.logoGroup}>
           <span style={styles.logoIcon}>✉️</span>
@@ -88,9 +134,8 @@ export default function App() {
         </div>
       </header>
 
-      {/* Main Cockpit Layout */}
       <div style={styles.mainGrid}>
-        {/* Left Form: Inputs */}
+        {/* Left Inputs */}
         <div style={styles.card}>
           <h2 style={styles.cardTitle}>AI Dispatch Cockpit</h2>
           <p style={styles.cardSub}>Compose emails using natural language prompts.</p>
@@ -113,96 +158,93 @@ export default function App() {
             style={styles.input}
           />
 
+          <label style={styles.label}>OPTIONAL MEETING / CALENDAR LINK</label>
+          <input
+            type="text"
+            placeholder="https://cal.com/your-name or Google Meet URL"
+            value={meetingLink}
+            onChange={(e) => handleLinkChange(e.target.value)}
+            style={styles.input}
+          />
+
           <label style={styles.label}>AI CONTEXT / PROMPT</label>
           <textarea
-            rows="4"
-            placeholder="Draft a quarterly follow-up update..."
+            rows="3"
+            placeholder="Draft a follow-up email proposing a quick meeting..."
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             style={styles.textarea}
           />
 
-          {/* Quick Suggestions */}
           <div style={styles.suggestionsGroup}>
             <span style={styles.labelSmall}>QUICK SUGGESTIONS</span>
             <div style={styles.btnGroup}>
-              <button
-                type="button"
-                onClick={() => handleQuickSuggestion('Draft a follow-up email after meeting.')}
-                style={styles.chipBtn}
-              >
+              <button type="button" onClick={() => handleQuickSuggestion('Draft a follow-up email after meeting.')} style={styles.chipBtn}>
                 Follow-up email
               </button>
-              <button
-                type="button"
-                onClick={() => handleQuickSuggestion('Request a 15-minute quick alignment meeting.')}
-                style={styles.chipBtn}
-              >
+              <button type="button" onClick={() => handleQuickSuggestion('Request a 15-minute quick alignment meeting.')} style={styles.chipBtn}>
                 Meeting request
               </button>
-              <button
-                type="button"
-                onClick={() => handleQuickSuggestion('Provide a quick weekly project progress update.')}
-                style={styles.chipBtn}
-              >
+              <button type="button" onClick={() => handleQuickSuggestion('Provide a quick weekly project progress update.')} style={styles.chipBtn}>
                 Project update
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickSuggestion('Draft an investor pitch follow-up note.')}
-                style={styles.chipBtn}
-              >
-                Investor Pitch
               </button>
             </div>
           </div>
 
-          <button
-            onClick={handleGenerateAndSend}
-            disabled={loading}
-            style={styles.submitBtn}
-          >
-            {loading ? '⚡ Generating & Dispatching...' : '✨ Generate & Send Email'}
+          <button onClick={handleGenerateDraft} disabled={generating} style={styles.generateBtn}>
+            {generating ? '⚡ Generating AI Draft...' : '✨ Generate AI Draft'}
           </button>
         </div>
 
-        {/* Right Preview Panel */}
+        {/* Right Editable Preview & Dispatch Panel */}
         <div style={styles.card}>
           <div style={styles.previewHeader}>
-            <h2 style={styles.cardTitle}>Live Generation Preview</h2>
-            <span style={styles.dispatchedBadge}>
-              {generatedEmail ? 'Dispatched via SMTP' : 'Drafting Mode'}
+            <h2 style={styles.cardTitle}>Editable Draft & Preview</h2>
+            <span style={isDispatched ? styles.dispatchedBadge : styles.draftBadge}>
+              {isDispatched ? 'Dispatched via SMTP' : 'Editable Draft Mode'}
             </span>
           </div>
 
-          {/* Dynamic Sender & Subject Preview */}
+          {/* Editable Subject Field */}
           <div style={styles.metaPreview}>
-            <div><strong>Subject:</strong> {generatedEmail?.subject || 'Your AI generated subject will appear here...'}</div>
-            <div style={{ color: '#00d2ff', marginTop: '4px' }}>
+            <label style={styles.labelSmall}>EDITABLE SUBJECT LINE</label>
+            <input
+              type="text"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder="AI generated subject will appear here..."
+              style={styles.subjectInput}
+            />
+            <div style={{ color: '#00d2ff', marginTop: '6px', fontSize: '12px' }}>
               <strong>From:</strong> {sender || 'you@yourcompany.com'}
             </div>
-            {recipient && (
-              <div style={{ color: '#99aab5', marginTop: '2px' }}>
-                <strong>To:</strong> {recipient}
-              </div>
-            )}
           </div>
 
-          {/* Live Body Preview */}
-          <div style={styles.bodyBox}>
-            {generatedEmail ? (
-              <p style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{generatedEmail.body}</p>
-            ) : (
-              <p style={{ color: '#556070', margin: 0 }}>
-                {prompt ? `[Prompt Active]: "${prompt}"` : 'Enter a prompt and click "Generate & Send Email" to see the live output.'}
-              </p>
-            )}
-          </div>
+          {/* Editable Body Field */}
+          <label style={styles.labelSmall}>EDITABLE EMAIL BODY</label>
+          <textarea
+            rows="8"
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            placeholder="AI generated body will appear here. You can edit, replace links, or modify text directly before dispatching!"
+            style={styles.bodyTextarea}
+          />
 
-          {/* Token Logs Bar */}
+          <button
+            onClick={handleDispatchEmail}
+            disabled={dispatching || !body}
+            style={{
+              ...styles.dispatchBtn,
+              opacity: !body ? 0.5 : 1,
+              cursor: !body ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {dispatching ? '🚀 Dispatching Email...' : '🚀 Dispatch Email via SMTP'}
+          </button>
+
           <div style={styles.logBar}>
-            <div>[20:14:12] SMTP Handshake: <span style={{ color: '#00ff88' }}>SUCCESS</span></div>
-            <div>Token Count: {tokenCount > 0 ? tokenCount : 294} Out</div>
+            <div>Status: <span style={{ color: isDispatched ? '#00ff88' : '#00d2ff' }}>{isDispatched ? 'DISPATCHED' : 'READY TO EDIT'}</span></div>
+            <div>Token Count: {tokenCount} Out</div>
           </div>
         </div>
       </div>
@@ -234,7 +276,6 @@ export default function App() {
   );
 }
 
-// Full Dashboard Dark Styling
 const styles = {
   container: {
     backgroundColor: '#0a0e17',
@@ -281,14 +322,14 @@ const styles = {
   cardTitle: { fontSize: '18px', margin: '0 0 6px 0', fontWeight: '600' },
   cardSub: { color: '#8899ac', fontSize: '13px', margin: '0 0 16px 0' },
   label: { fontSize: '11px', color: '#8899ac', fontWeight: 'bold', marginBottom: '6px' },
-  labelSmall: { fontSize: '10px', color: '#64748b', fontWeight: 'bold', marginBottom: '6px' },
+  labelSmall: { fontSize: '10px', color: '#64748b', fontWeight: 'bold', marginBottom: '4px', display: 'block' },
   input: {
     backgroundColor: '#0a0e17',
     border: '1px solid #232f45',
     borderRadius: '6px',
     padding: '10px 14px',
     color: '#fff',
-    marginBottom: '16px',
+    marginBottom: '14px',
     outline: 'none',
   },
   textarea: {
@@ -297,11 +338,11 @@ const styles = {
     borderRadius: '6px',
     padding: '10px 14px',
     color: '#fff',
-    marginBottom: '16px',
+    marginBottom: '14px',
     outline: 'none',
     resize: 'vertical',
   },
-  suggestionsGroup: { marginBottom: '20px' },
+  suggestionsGroup: { marginBottom: '16px' },
   btnGroup: { display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '6px' },
   chipBtn: {
     backgroundColor: '#1a2333',
@@ -312,7 +353,18 @@ const styles = {
     fontSize: '12px',
     cursor: 'pointer',
   },
-  submitBtn: {
+  generateBtn: {
+    backgroundColor: '#1e293b',
+    color: '#00d2ff',
+    border: '1px solid #00d2ff',
+    borderRadius: '6px',
+    padding: '12px',
+    fontWeight: 'bold',
+    fontSize: '14px',
+    cursor: 'pointer',
+    marginTop: 'auto',
+  },
+  dispatchBtn: {
     backgroundColor: '#00d2ff',
     color: '#000',
     border: 'none',
@@ -320,8 +372,7 @@ const styles = {
     padding: '12px',
     fontWeight: 'bold',
     fontSize: '14px',
-    cursor: 'pointer',
-    marginTop: 'auto',
+    marginTop: '12px',
   },
   previewHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
   dispatchedBadge: {
@@ -333,32 +384,53 @@ const styles = {
     fontSize: '11px',
     fontWeight: 'bold',
   },
+  draftBadge: {
+    backgroundColor: '#1c2536',
+    color: '#00d2ff',
+    border: '1px solid #00d2ff44',
+    padding: '4px 10px',
+    borderRadius: '12px',
+    fontSize: '11px',
+    fontWeight: 'bold',
+  },
   metaPreview: {
     backgroundColor: '#0a0e17',
-    padding: '12px 16px',
+    padding: '12px',
     borderRadius: '6px',
     border: '1px solid #1a2333',
     margin: '12px 0',
-    fontSize: '13px',
   },
-  bodyBox: {
+  subjectInput: {
+    backgroundColor: '#121824',
+    border: '1px solid #232f45',
+    borderRadius: '4px',
+    padding: '8px 10px',
+    color: '#fff',
+    width: '95%',
+    fontSize: '13px',
+    fontWeight: 'bold',
+    outline: 'none',
+  },
+  bodyTextarea: {
     backgroundColor: '#0a0e17',
     border: '1px solid #1a2333',
     borderRadius: '6px',
-    padding: '16px',
-    flexGrow: 1,
-    minHeight: '180px',
-    fontSize: '14px',
+    padding: '12px',
+    fontSize: '13px',
     lineHeight: '1.6',
     color: '#e2e8f0',
+    outline: 'none',
+    resize: 'vertical',
+    fontFamily: 'inherit',
+    flexGrow: 1,
   },
   logBar: {
     display: 'flex',
     justify: 'space-between',
     backgroundColor: '#070a10',
-    padding: '10px 14px',
+    padding: '8px 12px',
     borderRadius: '6px',
-    marginTop: '12px',
+    marginTop: '10px',
     fontSize: '11px',
     color: '#64748b',
   },
