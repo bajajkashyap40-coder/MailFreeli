@@ -38,7 +38,7 @@ async function getValidModel() {
   }
 }
 
-// 3. Endpoint: Dynamic Live Stats for Dashboard
+// 3. Dynamic Dashboard Stats Endpoint
 app.get('/api/stats', async (req, res) => {
   try {
     const totalEmails = await Email.countDocuments();
@@ -56,24 +56,30 @@ app.get('/api/stats', async (req, res) => {
   }
 });
 
-// 4. AI Email Generation & SMTP Dispatch Endpoint
-app.post('/api/generate-email', async (req, res) => {
-  const { sender, recipient, prompt } = req.body;
+// 4. STEP 1: AI Email Draft Generation ONLY (No Dispatch)
+app.post('/api/generate-draft', async (req, res) => {
+  const { recipient, prompt, meetingLink } = req.body;
 
   if (!recipient || !prompt) {
     return res.status(400).json({ error: 'Recipient and prompt are required.' });
   }
 
-  const senderEmail = sender || process.env.EMAIL_USER;
-
   try {
     const selectedModel = await getValidModel();
+
+    const linkInstruction = meetingLink 
+      ? `Use this exact meeting link in the email: "${meetingLink}".` 
+      : 'If a meeting or calendar link is needed, use the exact placeholder tag: "<YOUR_CALENDAR_LINK_HERE>". NEVER invent fake URLs.';
 
     const completion = await groq.chat.completions.create({
       messages: [
         {
           role: 'system',
-          content: 'You are an elite email generator. Return ONLY a valid JSON object with two keys: "subject" and "body". Do not wrap in markdown or add extra text.',
+          content: `You are an elite email generator.
+Return ONLY a valid JSON object with two keys: "subject" and "body". Do not wrap in markdown or add extra text.
+Rules:
+1. Do not invent fake links, URLs, or domains.
+2. ${linkInstruction}`,
         },
         {
           role: 'user',
@@ -85,10 +91,32 @@ app.post('/api/generate-email', async (req, res) => {
     });
 
     const aiContent = JSON.parse(completion.choices[0]?.message?.content || '{}');
-    const subject = aiContent.subject || 'Follow-up from MailFreeli';
-    const body = aiContent.body || prompt;
+    let subject = aiContent.subject || 'Follow-up from MailFreeli';
+    let body = aiContent.body || prompt;
 
-    // Configure Nodemailer Transporter
+    // Auto-swap placeholder if link was provided
+    if (meetingLink && body.includes('<YOUR_CALENDAR_LINK_HERE>')) {
+      body = body.replace(/<YOUR_CALENDAR_LINK_HERE>/g, meetingLink);
+    }
+
+    res.status(200).json({ subject, body });
+  } catch (error) {
+    console.error('AI Draft Error:', error);
+    res.status(500).json({ error: error.message || 'Failed to generate AI draft.' });
+  }
+});
+
+// 5. STEP 2: Dispatch Edited Email via Nodemailer & Log to DB
+app.post('/api/dispatch-email', async (req, res) => {
+  const { sender, recipient, prompt, subject, body } = req.body;
+
+  if (!recipient || !subject || !body) {
+    return res.status(400).json({ error: 'Recipient, subject, and body are required.' });
+  }
+
+  const senderEmail = sender || process.env.EMAIL_USER;
+
+  try {
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -97,7 +125,6 @@ app.post('/api/generate-email', async (req, res) => {
       },
     });
 
-    // Send the email via SMTP
     await transporter.sendMail({
       from: `"${senderEmail}" <${process.env.EMAIL_USER}>`,
       to: recipient,
@@ -106,7 +133,6 @@ app.post('/api/generate-email', async (req, res) => {
       replyTo: senderEmail,
     });
 
-    // Save record to MongoDB Atlas
     const newEmail = new Email({
       sender: senderEmail,
       recipient,
@@ -117,13 +143,7 @@ app.post('/api/generate-email', async (req, res) => {
     });
     await newEmail.save();
 
-    res.status(200).json({
-      message: 'Email generated, dispatched, and logged successfully!',
-      sender: senderEmail,
-      recipient,
-      subject,
-      body,
-    });
+    res.status(200).json({ message: 'Email dispatched and logged successfully!' });
   } catch (error) {
     console.error('Dispatch error:', error);
     
