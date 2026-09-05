@@ -17,11 +17,11 @@ export default function App() {
   const [dispatching, setDispatching] = useState(false);
 
   const [stats, setStats] = useState({
-    completionRate: '45.5%',
+    completionRate: '100.0%',
     activeQueue: '0',
     velocity: '0.18s',
-    totalLogs: '11',
-    sentCount: '5',
+    totalLogs: '0',
+    sentCount: '0',
   });
 
   const fetchStats = async () => {
@@ -126,29 +126,19 @@ export default function App() {
 
   return (
     <div style={styles.container}>
-      {/* Top Navbar */}
+      {/* Cleaned Top Header: Title & Tagline Only */}
       <header style={styles.header}>
         <div style={styles.logoGroup}>
-          <div style={styles.logoBadge}>⚡</div>
+          <img 
+            src="/logo.png" 
+            alt="MailFreeli Logo" 
+            style={styles.logoImg} 
+            onError={(e) => { e.target.style.display = 'none'; }} 
+          />
           <div>
-            <div style={styles.brandRow}>
-              <h1 style={styles.title}>MailFreeli</h1>
-              <span style={styles.tag}>v2.0.0</span>
-            </div>
+            <h1 style={styles.title}>MailFreeli</h1>
             <p style={styles.subTitle}>AI-Powered Email Dispatch</p>
           </div>
-        </div>
-
-        <div style={styles.headerRight}>
-          <div style={styles.apiStatus}>
-            <span style={styles.statusDot}></span>
-            <div>
-              <div style={styles.apiStatusTitle}>API Operational</div>
-              <div style={styles.apiStatusSub}>All systems normal</div>
-            </div>
-          </div>
-          <button style={styles.iconBtn}>🌙</button>
-          <button style={styles.iconBtn}>⚙️</button>
         </div>
       </header>
 
@@ -215,7 +205,7 @@ export default function App() {
 
           <button onClick={handleGenerateDraft} disabled={generating} style={styles.generateBtn}>
             <div style={styles.btnContent}>
-              <span style={{ fontSize: '16px' }}>✨</span>
+              <span>✨</span>
               <div>
                 <div style={styles.btnTitle}>{generating ? 'Generating AI Draft...' : 'Generate AI Draft'}</div>
                 <div style={styles.btnSub}>AI will create a personalized email draft</div>
@@ -231,7 +221,6 @@ export default function App() {
               <h2 style={styles.cardTitle}>Editable Draft & Preview</h2>
               <p style={styles.cardSub}>Review and edit your AI-generated email</p>
             </div>
-            <button style={styles.previewModeBtn}>👁️ Preview Mode</button>
           </div>
 
           <div style={styles.subjectRow}>
@@ -268,7 +257,7 @@ export default function App() {
             }}
           >
             <div style={styles.btnContent}>
-              <span style={{ fontSize: '16px' }}>🚀</span>
+              <span>🚀</span>
               <div>
                 <div style={styles.btnTitle}>{dispatching ? 'Sending Email...' : 'Send Email via SMTP'}</div>
                 <div style={styles.btnSub}>Email will be sent securely</div>
@@ -277,12 +266,12 @@ export default function App() {
           </button>
 
           <div style={styles.statusIndicator}>
-            <span style={styles.greenCheck}>✓</span> Draft ready <span style={{ color: '#334155', margin: '0 6px' }}>•</span> Ready to send
+            <span style={styles.greenCheck}>✓</span> {isDispatched ? 'Dispatched via SMTP' : 'Draft ready • Ready to send'}
           </div>
         </div>
       </div>
 
-      {/* Bottom Metrics Cards */}
+      {/* Bottom Metrics Cards with Styled SVG Badges */}
       <div style={styles.metricsRow}>
         <div style={styles.metricCard}>
           <div>
@@ -290,7 +279,9 @@ export default function App() {
             <div style={styles.metricVal}>{stats.completionRate}</div>
             <div style={styles.metricSub}>{stats.totalLogs} total executions</div>
           </div>
-          <div style={styles.metricIconBadge}>📈</div>
+          <div style={styles.metricIconBadge}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+          </div>
         </div>
 
         <div style={styles.metricCard}>
@@ -299,7 +290,9 @@ export default function App() {
             <div style={styles.metricVal}>{stats.activeQueue}</div>
             <div style={styles.metricSub}>No emails queued</div>
           </div>
-          <div style={styles.metricIconBadge}>✉️</div>
+          <div style={styles.metricIconBadge}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+          </div>
         </div>
 
         <div style={styles.metricCard}>
@@ -308,7 +301,9 @@ export default function App() {
             <div style={styles.metricVal}>{stats.velocity}</div>
             <div style={styles.metricSub}>Average response time</div>
           </div>
-          <div style={styles.metricIconBadge}>⏱️</div>
+          <div style={styles.metricIconBadge}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          </div>
         </div>
 
         <div style={styles.metricCard}>
@@ -317,14 +312,15 @@ export default function App() {
             <div style={styles.metricVal}>{stats.sentCount || stats.totalLogs}</div>
             <div style={styles.metricSub}>Live dispatch count</div>
           </div>
-          <div style={styles.metricIconBadge}>🚀</div>
+          <div style={styles.metricIconBadge}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-// Design System Matching Mockup
 const styles = {
   container: {
     backgroundColor: '#07090e',
@@ -335,66 +331,13 @@ const styles = {
   },
   header: {
     display: 'flex',
-    justify: 'space-between',
     alignItems: 'center',
     marginBottom: '24px',
   },
   logoGroup: { display: 'flex', alignItems: 'center', gap: '12px' },
-  logoBadge: {
-    width: '36px',
-    height: '36px',
-    borderRadius: '10px',
-    backgroundColor: '#0284c7',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '18px',
-    color: '#fff',
-    boxShadow: '0 0 15px rgba(2, 132, 199, 0.4)',
-  },
-  brandRow: { display: 'flex', alignItems: 'center', gap: '8px' },
-  title: { fontSize: '20px', fontWeight: '700', margin: 0, color: '#f8fafc' },
-  tag: {
-    backgroundColor: '#0f172a',
-    border: '1px solid #1e293b',
-    color: '#94a3b8',
-    padding: '2px 8px',
-    borderRadius: '12px',
-    fontSize: '11px',
-    fontWeight: '600',
-  },
-  subTitle: { margin: 0, fontSize: '12px', color: '#64748b' },
-  headerRight: { display: 'flex', alignItems: 'center', gap: '12px' },
-  apiStatus: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    backgroundColor: '#091410',
-    border: '1px solid #103b2b',
-    padding: '6px 12px',
-    borderRadius: '20px',
-  },
-  statusDot: {
-    width: '8px',
-    height: '8px',
-    borderRadius: '50%',
-    backgroundColor: '#22c55e',
-    boxShadow: '0 0 8px #22c55e',
-  },
-  apiStatusTitle: { fontSize: '11px', fontWeight: '700', color: '#f8fafc' },
-  apiStatusSub: { fontSize: '10px', color: '#64748b' },
-  iconBtn: {
-    backgroundColor: '#0f172a',
-    border: '1px solid #1e293b',
-    color: '#94a3b8',
-    width: '36px',
-    height: '36px',
-    borderRadius: '10px',
-    display: 'flex',
-    alignItems: 'center',
-    justify: 'center',
-    cursor: 'pointer',
-  },
+  logoImg: { width: '40px', height: '40px', borderRadius: '10px', objectFit: 'cover' },
+  title: { fontSize: '22px', fontWeight: '700', margin: 0, color: '#f8fafc' },
+  subTitle: { margin: 0, fontSize: '13px', color: '#64748b' },
   mainGrid: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
@@ -469,16 +412,6 @@ const styles = {
   btnTitle: { fontSize: '13px', fontWeight: '700', lineHeight: '1.2' },
   btnSub: { fontSize: '10px', opacity: 0.8 },
   previewHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' },
-  previewModeBtn: {
-    backgroundColor: '#0f141f',
-    border: '1px solid #1a2333',
-    color: '#38bdf8',
-    padding: '6px 12px',
-    borderRadius: '8px',
-    fontSize: '11px',
-    fontWeight: '600',
-    cursor: 'pointer',
-  },
   subjectRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
   charCount: { fontSize: '10px', color: '#64748b' },
   previewContainer: {
@@ -536,14 +469,13 @@ const styles = {
   metricVal: { fontSize: '22px', fontWeight: '700', color: '#f8fafc', margin: '4px 0' },
   metricSub: { fontSize: '10px', color: '#64748b' },
   metricIconBadge: {
-    width: '36px',
-    height: '36px',
+    width: '38px',
+    height: '38px',
     borderRadius: '10px',
     backgroundColor: '#0f141f',
     border: '1px solid #1a2333',
     display: 'flex',
     alignItems: 'center',
     justify: 'center',
-    fontSize: '16px',
   },
 };
