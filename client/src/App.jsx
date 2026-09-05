@@ -3,24 +3,25 @@ import React, { useState, useEffect } from 'react';
 export default function App() {
   const [sender, setSender] = useState('');
   const [recipient, setRecipient] = useState('');
-  const [prompt, setPrompt] = useState('');
+  const [prompt, setPrompt] = useState('Draft a follow-up email proposing a quick meeting.');
   const [meetingLink, setMeetingLink] = useState('');
   
-  // Editable Preview States
-  const [subject, setSubject] = useState('');
-  const [body, setBody] = useState('');
+  // Preview States
+  const [subject, setSubject] = useState('Quick Meeting to Discuss Our Project');
+  const [body, setBody] = useState(
+    "Hi there,\n\nI hope you're doing well.\n\nI wanted to follow up and see if you'd be available for a quick meeting to discuss our project and next steps.\n\nPlease let me know a time that works for you.\n\nLooking forward to it!\n\nBest regards,\nYour Name"
+  );
   const [isDispatched, setIsDispatched] = useState(false);
 
   const [generating, setGenerating] = useState(false);
   const [dispatching, setDispatching] = useState(false);
-  const [tokenCount, setTokenCount] = useState(0);
 
   const [stats, setStats] = useState({
-    completionRate: '100.0%',
+    completionRate: '45.5%',
     activeQueue: '0',
-    velocity: '0.24s',
-    totalLogs: '0',
-    sentCount: '0',
+    velocity: '0.18s',
+    totalLogs: '11',
+    sentCount: '5',
   });
 
   const fetchStats = async () => {
@@ -35,7 +36,6 @@ export default function App() {
     }
   };
 
-  // Real-Time Auto Polling Every 3 Seconds
   useEffect(() => {
     fetchStats();
     const interval = setInterval(() => {
@@ -70,7 +70,6 @@ export default function App() {
       if (response.ok) {
         setSubject(data.subject);
         setBody(data.body);
-        setTokenCount(Math.floor(Math.random() * 50) + 250);
         fetchStats();
       } else {
         alert(`Error: ${data.error}`);
@@ -107,7 +106,6 @@ export default function App() {
 
       if (response.ok) {
         setIsDispatched(true);
-        alert('Email dispatched successfully via SMTP!');
         fetchStats();
       } else {
         alert(`Error: ${data.error}`);
@@ -128,31 +126,40 @@ export default function App() {
 
   return (
     <div style={styles.container}>
-      {/* Top Header with Logo */}
+      {/* Top Navbar */}
       <header style={styles.header}>
         <div style={styles.logoGroup}>
-          <img 
-            src="/logo.png" 
-            alt="MailFreeli Logo" 
-            style={styles.logoImg} 
-            onError={(e) => { e.target.style.display = 'none'; }} 
-          />
-          <h1 style={styles.title}>MailFreeli</h1>
-          <span style={styles.tag}>AI DISPATCH V2.0</span>
+          <div style={styles.logoBadge}>⚡</div>
+          <div>
+            <div style={styles.brandRow}>
+              <h1 style={styles.title}>MailFreeli</h1>
+              <span style={styles.tag}>v2.0.0</span>
+            </div>
+            <p style={styles.subTitle}>AI-Powered Email Dispatch</p>
+          </div>
         </div>
-        <div style={styles.apiStatus}>
-          <span style={styles.statusDot}>●</span> LIVE API STATUS: OPERATIONAL
+
+        <div style={styles.headerRight}>
+          <div style={styles.apiStatus}>
+            <span style={styles.statusDot}></span>
+            <div>
+              <div style={styles.apiStatusTitle}>API Operational</div>
+              <div style={styles.apiStatusSub}>All systems normal</div>
+            </div>
+          </div>
+          <button style={styles.iconBtn}>🌙</button>
+          <button style={styles.iconBtn}>⚙️</button>
         </div>
       </header>
 
-      {/* Main Cockpit Layout */}
+      {/* Main Grid Cockpit */}
       <div style={styles.mainGrid}>
-        {/* Left Inputs */}
+        {/* Left Form: AI Dispatch Cockpit */}
         <div style={styles.card}>
           <h2 style={styles.cardTitle}>AI Dispatch Cockpit</h2>
-          <p style={styles.cardSub}>Compose emails using natural language prompts.</p>
+          <p style={styles.cardSub}>Compose your email with AI assistance</p>
 
-          <label style={styles.label}>SENDER EMAIL ADDRESS</label>
+          <label style={styles.label}>FROM (SENDER EMAIL)</label>
           <input
             type="email"
             placeholder="you@yourcompany.com"
@@ -161,7 +168,7 @@ export default function App() {
             style={styles.input}
           />
 
-          <label style={styles.label}>RECIPIENT EMAIL ADDRESS</label>
+          <label style={styles.label}>TO (RECIPIENT EMAIL)</label>
           <input
             type="email"
             placeholder="recipient@example.com"
@@ -170,7 +177,7 @@ export default function App() {
             style={styles.input}
           />
 
-          <label style={styles.label}>OPTIONAL MEETING / CALENDAR LINK</label>
+          <label style={styles.label}>MEETING / CALENDAR LINK (OPTIONAL)</label>
           <input
             type="text"
             placeholder="https://cal.com/your-name or Google Meet URL"
@@ -182,7 +189,7 @@ export default function App() {
           <label style={styles.label}>AI CONTEXT / PROMPT</label>
           <textarea
             rows="3"
-            placeholder="Draft a follow-up email proposing a quick meeting..."
+            placeholder="Draft a follow-up email proposing a quick meeting."
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             style={styles.textarea}
@@ -200,262 +207,343 @@ export default function App() {
               <button type="button" onClick={() => handleQuickSuggestion('Provide a quick weekly project progress update.')} style={styles.chipBtn}>
                 Project update
               </button>
+              <button type="button" onClick={() => handleQuickSuggestion('Introduction email to new client.')} style={styles.chipBtn}>
+                Introduction
+              </button>
             </div>
           </div>
 
           <button onClick={handleGenerateDraft} disabled={generating} style={styles.generateBtn}>
-            {generating ? '⚡ Generating AI Draft...' : '✨ Generate AI Draft'}
+            <div style={styles.btnContent}>
+              <span style={{ fontSize: '16px' }}>✨</span>
+              <div>
+                <div style={styles.btnTitle}>{generating ? 'Generating AI Draft...' : 'Generate AI Draft'}</div>
+                <div style={styles.btnSub}>AI will create a personalized email draft</div>
+              </div>
+            </div>
           </button>
         </div>
 
-        {/* Right Preview Panel */}
+        {/* Right Panel: Editable Draft & Preview */}
         <div style={styles.card}>
           <div style={styles.previewHeader}>
-            <h2 style={styles.cardTitle}>Editable Draft & Preview</h2>
-            <span style={isDispatched ? styles.dispatchedBadge : styles.draftBadge}>
-              {isDispatched ? 'Dispatched via SMTP' : 'Editable Draft Mode'}
-            </span>
-          </div>
-
-          <div style={styles.metaPreview}>
-            <label style={styles.labelSmall}>EDITABLE SUBJECT LINE</label>
-            <input
-              type="text"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              placeholder="AI generated subject will appear here..."
-              style={styles.subjectInput}
-            />
-            <div style={{ color: '#00d2ff', marginTop: '6px', fontSize: '12px' }}>
-              <strong>From:</strong> {sender || 'you@yourcompany.com'}
+            <div>
+              <h2 style={styles.cardTitle}>Editable Draft & Preview</h2>
+              <p style={styles.cardSub}>Review and edit your AI-generated email</p>
             </div>
+            <button style={styles.previewModeBtn}>👁️ Preview Mode</button>
           </div>
 
-          <label style={styles.labelSmall}>EDITABLE EMAIL BODY</label>
-          <textarea
-            rows="8"
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder="AI generated body will appear here..."
-            style={styles.bodyTextarea}
+          <div style={styles.subjectRow}>
+            <label style={styles.label}>SUBJECT</label>
+            <span style={styles.charCount}>{subject.length}/120</span>
+          </div>
+          <input
+            type="text"
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            style={styles.input}
           />
+
+          <label style={styles.label}>EMAIL PREVIEW</label>
+          <div style={styles.previewContainer}>
+            <div style={styles.previewMetaBox}>
+              <div><strong>To:</strong> {recipient || 'recipient@example.com'}</div>
+              <div><strong>From:</strong> {sender || 'you@yourcompany.com'}</div>
+              <div><strong>Subject:</strong> {subject || 'Quick Meeting to Discuss Our Project'}</div>
+            </div>
+            <textarea
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              style={styles.previewBodyTextarea}
+            />
+          </div>
 
           <button
             onClick={handleDispatchEmail}
             disabled={dispatching || !body}
             style={{
               ...styles.dispatchBtn,
-              opacity: !body ? 0.5 : 1,
-              cursor: !body ? 'not-allowed' : 'pointer',
+              opacity: !body ? 0.6 : 1,
             }}
           >
-            {dispatching ? '🚀 Dispatching Email...' : '🚀 Dispatch Email via SMTP'}
+            <div style={styles.btnContent}>
+              <span style={{ fontSize: '16px' }}>🚀</span>
+              <div>
+                <div style={styles.btnTitle}>{dispatching ? 'Sending Email...' : 'Send Email via SMTP'}</div>
+                <div style={styles.btnSub}>Email will be sent securely</div>
+              </div>
+            </div>
           </button>
 
-          <div style={styles.logBar}>
-            <div>Status: <span style={{ color: isDispatched ? '#00ff88' : '#00d2ff' }}>{isDispatched ? 'DISPATCHED' : 'READY TO EDIT'}</span></div>
-            <div>Token Count: {tokenCount} Out</div>
+          <div style={styles.statusIndicator}>
+            <span style={styles.greenCheck}>✓</span> Draft ready <span style={{ color: '#334155', margin: '0 6px' }}>•</span> Ready to send
           </div>
         </div>
       </div>
 
-      {/* Real-Time Dashboard Metrics Row */}
+      {/* Bottom Metrics Cards */}
       <div style={styles.metricsRow}>
         <div style={styles.metricCard}>
-          <div style={styles.metricLabel}>AI Completion Rate</div>
-          <div style={styles.metricVal}>{stats.completionRate}</div>
-          <div style={styles.metricSub}>{stats.totalLogs} total executions</div>
+          <div>
+            <div style={styles.metricLabel}>AI Success Rate</div>
+            <div style={styles.metricVal}>{stats.completionRate}</div>
+            <div style={styles.metricSub}>{stats.totalLogs} total executions</div>
+          </div>
+          <div style={styles.metricIconBadge}>📈</div>
         </div>
+
         <div style={styles.metricCard}>
-          <div style={styles.metricLabel}>SMTP Queue</div>
-          <div style={styles.metricVal}>{stats.activeQueue} Active</div>
-          <div style={styles.metricSub}>0 backlogs</div>
+          <div>
+            <div style={styles.metricLabel}>SMTP Queue</div>
+            <div style={styles.metricVal}>{stats.activeQueue}</div>
+            <div style={styles.metricSub}>No emails queued</div>
+          </div>
+          <div style={styles.metricIconBadge}>✉️</div>
         </div>
+
         <div style={styles.metricCard}>
-          <div style={styles.metricLabel}>Velocity</div>
-          <div style={styles.metricVal}>{stats.velocity}</div>
-          <div style={styles.metricSub}>Avg stream speed</div>
+          <div>
+            <div style={styles.metricLabel}>Avg. Generation Time</div>
+            <div style={styles.metricVal}>{stats.velocity}</div>
+            <div style={styles.metricSub}>Average response time</div>
+          </div>
+          <div style={styles.metricIconBadge}>⏱️</div>
         </div>
+
         <div style={styles.metricCard}>
-          <div style={styles.metricLabel}>Mail Stream</div>
-          <div style={styles.metricVal}>{stats.sentCount || stats.totalLogs} Dispatched</div>
-          <div style={styles.metricSub}>Live DB records</div>
+          <div>
+            <div style={styles.metricLabel}>Emails Sent</div>
+            <div style={styles.metricVal}>{stats.sentCount || stats.totalLogs}</div>
+            <div style={styles.metricSub}>Live dispatch count</div>
+          </div>
+          <div style={styles.metricIconBadge}>🚀</div>
         </div>
       </div>
     </div>
   );
 }
 
+// Design System Matching Mockup
 const styles = {
   container: {
-    backgroundColor: '#0a0e17',
-    color: '#ffffff',
+    backgroundColor: '#07090e',
+    color: '#e2e8f0',
     minHeight: '100vh',
-    padding: '20px 40px',
-    fontFamily: 'Inter, system-ui, sans-serif',
+    padding: '24px 36px',
+    fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   },
   header: {
     display: 'flex',
     justify: 'space-between',
     alignItems: 'center',
     marginBottom: '24px',
-    borderBottom: '1px solid #1a2333',
-    paddingBottom: '16px',
   },
   logoGroup: { display: 'flex', alignItems: 'center', gap: '12px' },
-  logoImg: { width: '36px', height: '36px', borderRadius: '8px', objectFit: 'cover' },
-  title: { fontSize: '24px', fontWeight: 'bold', margin: 0 },
-  tag: {
-    backgroundColor: '#003366',
-    color: '#00d2ff',
-    padding: '4px 8px',
-    borderRadius: '4px',
-    fontSize: '11px',
-    fontWeight: 'bold',
+  logoBadge: {
+    width: '36px',
+    height: '36px',
+    borderRadius: '10px',
+    backgroundColor: '#0284c7',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '18px',
+    color: '#fff',
+    boxShadow: '0 0 15px rgba(2, 132, 199, 0.4)',
   },
-  apiStatus: { color: '#00ff88', fontSize: '13px', fontWeight: '600' },
-  statusDot: { fontSize: '10px', marginRight: '6px' },
+  brandRow: { display: 'flex', alignItems: 'center', gap: '8px' },
+  title: { fontSize: '20px', fontWeight: '700', margin: 0, color: '#f8fafc' },
+  tag: {
+    backgroundColor: '#0f172a',
+    border: '1px solid #1e293b',
+    color: '#94a3b8',
+    padding: '2px 8px',
+    borderRadius: '12px',
+    fontSize: '11px',
+    fontWeight: '600',
+  },
+  subTitle: { margin: 0, fontSize: '12px', color: '#64748b' },
+  headerRight: { display: 'flex', alignItems: 'center', gap: '12px' },
+  apiStatus: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    backgroundColor: '#091410',
+    border: '1px solid #103b2b',
+    padding: '6px 12px',
+    borderRadius: '20px',
+  },
+  statusDot: {
+    width: '8px',
+    height: '8px',
+    borderRadius: '50%',
+    backgroundColor: '#22c55e',
+    boxShadow: '0 0 8px #22c55e',
+  },
+  apiStatusTitle: { fontSize: '11px', fontWeight: '700', color: '#f8fafc' },
+  apiStatusSub: { fontSize: '10px', color: '#64748b' },
+  iconBtn: {
+    backgroundColor: '#0f172a',
+    border: '1px solid #1e293b',
+    color: '#94a3b8',
+    width: '36px',
+    height: '36px',
+    borderRadius: '10px',
+    display: 'flex',
+    alignItems: 'center',
+    justify: 'center',
+    cursor: 'pointer',
+  },
   mainGrid: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
-    gap: '24px',
-    marginBottom: '24px',
+    gap: '20px',
+    marginBottom: '20px',
   },
   card: {
-    backgroundColor: '#121824',
-    border: '1px solid #1e293b',
-    borderRadius: '12px',
-    padding: '24px',
+    backgroundColor: '#0b0f17',
+    border: '1px solid #161e2e',
+    borderRadius: '14px',
+    padding: '20px',
     display: 'flex',
     flexDirection: 'column',
   },
-  cardTitle: { fontSize: '18px', margin: '0 0 6px 0', fontWeight: '600' },
-  cardSub: { color: '#8899ac', fontSize: '13px', margin: '0 0 16px 0' },
-  label: { fontSize: '11px', color: '#8899ac', fontWeight: 'bold', marginBottom: '6px' },
-  labelSmall: { fontSize: '10px', color: '#64748b', fontWeight: 'bold', marginBottom: '4px', display: 'block' },
+  cardTitle: { fontSize: '16px', margin: '0 0 2px 0', fontWeight: '600', color: '#f8fafc' },
+  cardSub: { color: '#64748b', fontSize: '12px', margin: '0 0 16px 0' },
+  label: { fontSize: '10px', color: '#64748b', fontWeight: '700', letterSpacing: '0.5px', marginBottom: '6px', display: 'block' },
+  labelSmall: { fontSize: '10px', color: '#64748b', fontWeight: '700', letterSpacing: '0.5px', marginBottom: '8px', display: 'block' },
   input: {
-    backgroundColor: '#0a0e17',
-    border: '1px solid #232f45',
-    borderRadius: '6px',
-    padding: '10px 14px',
-    color: '#fff',
+    backgroundColor: '#0f141f',
+    border: '1px solid #1a2333',
+    borderRadius: '8px',
+    padding: '10px 12px',
+    color: '#f8fafc',
+    fontSize: '13px',
     marginBottom: '14px',
     outline: 'none',
   },
   textarea: {
-    backgroundColor: '#0a0e17',
-    border: '1px solid #232f45',
-    borderRadius: '6px',
-    padding: '10px 14px',
-    color: '#fff',
+    backgroundColor: '#0f141f',
+    border: '1px solid #1a2333',
+    borderRadius: '8px',
+    padding: '10px 12px',
+    color: '#f8fafc',
+    fontSize: '13px',
     marginBottom: '14px',
     outline: 'none',
-    resize: 'vertical',
+    resize: 'none',
   },
   suggestionsGroup: { marginBottom: '16px' },
-  btnGroup: { display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '6px' },
+  btnGroup: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
   chipBtn: {
-    backgroundColor: '#1a2333',
-    border: '1px solid #2d3b55',
-    color: '#a0aec0',
+    backgroundColor: '#0f141f',
+    border: '1px solid #1a2333',
+    color: '#94a3b8',
     padding: '6px 12px',
-    borderRadius: '6px',
+    borderRadius: '8px',
     fontSize: '12px',
     cursor: 'pointer',
   },
   generateBtn: {
-    backgroundColor: '#1e293b',
-    color: '#00d2ff',
-    border: '1px solid #00d2ff',
-    borderRadius: '6px',
+    backgroundColor: '#0284c7',
+    border: 'none',
+    borderRadius: '10px',
     padding: '12px',
-    fontWeight: 'bold',
-    fontSize: '14px',
     cursor: 'pointer',
+    color: '#ffffff',
     marginTop: 'auto',
+    boxShadow: '0 0 20px rgba(2, 132, 199, 0.3)',
   },
   dispatchBtn: {
-    backgroundColor: '#00d2ff',
-    color: '#000',
+    backgroundColor: '#0284c7',
     border: 'none',
-    borderRadius: '6px',
+    borderRadius: '10px',
     padding: '12px',
-    fontWeight: 'bold',
-    fontSize: '14px',
+    cursor: 'pointer',
+    color: '#ffffff',
+    marginTop: '16px',
+    boxShadow: '0 0 20px rgba(2, 132, 199, 0.3)',
+  },
+  btnContent: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' },
+  btnTitle: { fontSize: '13px', fontWeight: '700', lineHeight: '1.2' },
+  btnSub: { fontSize: '10px', opacity: 0.8 },
+  previewHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' },
+  previewModeBtn: {
+    backgroundColor: '#0f141f',
+    border: '1px solid #1a2333',
+    color: '#38bdf8',
+    padding: '6px 12px',
+    borderRadius: '8px',
+    fontSize: '11px',
+    fontWeight: '600',
+    cursor: 'pointer',
+  },
+  subjectRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+  charCount: { fontSize: '10px', color: '#64748b' },
+  previewContainer: {
+    backgroundColor: '#0d121c',
+    border: '1px solid #1a2333',
+    borderRadius: '8px',
+    padding: '12px',
+    flexGrow: 1,
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  previewMetaBox: {
+    borderBottom: '1px solid #161e2e',
+    paddingBottom: '8px',
+    marginBottom: '12px',
+    fontSize: '11px',
+    color: '#94a3b8',
+    lineHeight: '1.6',
+  },
+  previewBodyTextarea: {
+    backgroundColor: 'transparent',
+    border: 'none',
+    color: '#cbd5e1',
+    fontSize: '12px',
+    lineHeight: '1.6',
+    outline: 'none',
+    resize: 'none',
+    width: '100%',
+    flexGrow: 1,
+    fontFamily: 'inherit',
+  },
+  statusIndicator: {
+    display: 'flex',
+    alignItems: 'center',
+    fontSize: '11px',
+    color: '#22c55e',
     marginTop: '12px',
   },
-  previewHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  dispatchedBadge: {
-    backgroundColor: '#0b2e28',
-    color: '#00ff88',
-    border: '1px solid #00ff8844',
-    padding: '4px 10px',
-    borderRadius: '12px',
-    fontSize: '11px',
-    fontWeight: 'bold',
-  },
-  draftBadge: {
-    backgroundColor: '#1c2536',
-    color: '#00d2ff',
-    border: '1px solid #00d2ff44',
-    padding: '4px 10px',
-    borderRadius: '12px',
-    fontSize: '11px',
-    fontWeight: 'bold',
-  },
-  metaPreview: {
-    backgroundColor: '#0a0e17',
-    padding: '12px',
-    borderRadius: '6px',
-    border: '1px solid #1a2333',
-    margin: '12px 0',
-  },
-  subjectInput: {
-    backgroundColor: '#121824',
-    border: '1px solid #232f45',
-    borderRadius: '4px',
-    padding: '8px 10px',
-    color: '#fff',
-    width: '95%',
-    fontSize: '13px',
-    fontWeight: 'bold',
-    outline: 'none',
-  },
-  bodyTextarea: {
-    backgroundColor: '#0a0e17',
-    border: '1px solid #1a2333',
-    borderRadius: '6px',
-    padding: '12px',
-    fontSize: '13px',
-    lineHeight: '1.6',
-    color: '#e2e8f0',
-    outline: 'none',
-    resize: 'vertical',
-    fontFamily: 'inherit',
-    flexGrow: 1,
-  },
-  logBar: {
-    display: 'flex',
-    justify: 'space-between',
-    backgroundColor: '#070a10',
-    padding: '8px 12px',
-    borderRadius: '6px',
-    marginTop: '10px',
-    fontSize: '11px',
-    color: '#64748b',
-  },
+  greenCheck: { marginRight: '6px' },
   metricsRow: {
     display: 'grid',
     gridTemplateColumns: 'repeat(4, 1fr)',
     gap: '16px',
   },
   metricCard: {
-    backgroundColor: '#121824',
-    border: '1px solid #1e293b',
-    borderRadius: '8px',
+    backgroundColor: '#0b0f17',
+    border: '1px solid #161e2e',
+    borderRadius: '12px',
     padding: '16px',
+    display: 'flex',
+    justify: 'space-between',
+    alignItems: 'center',
   },
-  metricLabel: { fontSize: '11px', color: '#64748b', fontWeight: 'bold' },
-  metricVal: { fontSize: '20px', fontWeight: 'bold', color: '#00d2ff', margin: '4px 0' },
-  metricSub: { fontSize: '11px', color: '#475569' },
+  metricLabel: { fontSize: '11px', color: '#94a3b8', fontWeight: '500' },
+  metricVal: { fontSize: '22px', fontWeight: '700', color: '#f8fafc', margin: '4px 0' },
+  metricSub: { fontSize: '10px', color: '#64748b' },
+  metricIconBadge: {
+    width: '36px',
+    height: '36px',
+    borderRadius: '10px',
+    backgroundColor: '#0f141f',
+    border: '1px solid #1a2333',
+    display: 'flex',
+    alignItems: 'center',
+    justify: 'center',
+    fontSize: '16px',
+  },
 };
