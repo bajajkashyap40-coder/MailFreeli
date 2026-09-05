@@ -126,7 +126,7 @@ export default function App() {
 
   return (
     <div style={styles.container}>
-      {/* Cleaned Top Header: Title & Tagline Only */}
+      {/* Top Header */}
       <header style={styles.header}>
         <div style={styles.logoGroup}>
           <img 
@@ -271,50 +271,54 @@ export default function App() {
         </div>
       </div>
 
-      {/* Bottom Metrics Cards with Styled SVG Badges */}
+      {/* Uniform Cyan Neon Metrics Section */}
       <div style={styles.metricsRow}>
         <div style={styles.metricCard}>
           <div>
-            <div style={styles.metricLabel}>AI Success Rate</div>
+            <div style={styles.metricHeader}>
+              <span style={styles.metricDotCyan}></span>
+              <span style={styles.metricLabel}>AI Success Rate</span>
+            </div>
             <div style={styles.metricVal}>{stats.completionRate}</div>
             <div style={styles.metricSub}>{stats.totalLogs} total executions</div>
           </div>
-          <div style={styles.metricIconBadge}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
-          </div>
+          <div style={styles.metricPillCyan}>LIVE</div>
         </div>
 
         <div style={styles.metricCard}>
           <div>
-            <div style={styles.metricLabel}>SMTP Queue</div>
+            <div style={styles.metricHeader}>
+              <span style={styles.metricDotCyan}></span>
+              <span style={styles.metricLabel}>SMTP Queue</span>
+            </div>
             <div style={styles.metricVal}>{stats.activeQueue}</div>
-            <div style={styles.metricSub}>No emails queued</div>
+            <div style={styles.metricSub}>0 Backlog</div>
           </div>
-          <div style={styles.metricIconBadge}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-          </div>
+          <div style={styles.metricPillCyan}>READY</div>
         </div>
 
         <div style={styles.metricCard}>
           <div>
-            <div style={styles.metricLabel}>Avg. Generation Time</div>
+            <div style={styles.metricHeader}>
+              <span style={styles.metricDotCyan}></span>
+              <span style={styles.metricLabel}>Avg Stream Velocity</span>
+            </div>
             <div style={styles.metricVal}>{stats.velocity}</div>
-            <div style={styles.metricSub}>Average response time</div>
+            <div style={styles.metricSub}>Response time</div>
           </div>
-          <div style={styles.metricIconBadge}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-          </div>
+          <div style={styles.metricPillCyan}>FAST</div>
         </div>
 
         <div style={styles.metricCard}>
           <div>
-            <div style={styles.metricLabel}>Emails Sent</div>
+            <div style={styles.metricHeader}>
+              <span style={styles.metricDotCyan}></span>
+              <span style={styles.metricLabel}>Total Mails Sent</span>
+            </div>
             <div style={styles.metricVal}>{stats.sentCount || stats.totalLogs}</div>
-            <div style={styles.metricSub}>Live dispatch count</div>
+            <div style={styles.metricSub}>Live DB records</div>
           </div>
-          <div style={styles.metricIconBadge}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-          </div>
+          <div style={styles.metricPillCyan}>SYNCED</div>
         </div>
       </div>
     </div>
@@ -451,6 +455,8 @@ const styles = {
     marginTop: '12px',
   },
   greenCheck: { marginRight: '6px' },
+
+  // Uniform Bottom Metrics Styling
   metricsRow: {
     display: 'grid',
     gridTemplateColumns: 'repeat(4, 1fr)',
@@ -458,24 +464,20 @@ const styles = {
   },
   metricCard: {
     backgroundColor: '#0b0f17',
-    border: '1px solid #161e2e',
+    border: '1px solid #1e293b',
+    borderTop: '2px solid #38bdf8',
     borderRadius: '12px',
-    padding: '16px',
+    padding: '16px 20px',
     display: 'flex',
     justify: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)',
   },
-  metricLabel: { fontSize: '11px', color: '#94a3b8', fontWeight: '500' },
-  metricVal: { fontSize: '22px', fontWeight: '700', color: '#f8fafc', margin: '4px 0' },
+  metricHeader: { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' },
+  metricLabel: { fontSize: '11px', color: '#94a3b8', fontWeight: '600', letterSpacing: '0.3px' },
+  metricVal: { fontSize: '24px', fontWeight: '800', color: '#f8fafc', margin: '2px 0 4px 0' },
   metricSub: { fontSize: '10px', color: '#64748b' },
-  metricIconBadge: {
-    width: '38px',
-    height: '38px',
-    borderRadius: '10px',
-    backgroundColor: '#0f141f',
-    border: '1px solid #1a2333',
-    display: 'flex',
-    alignItems: 'center',
-    justify: 'center',
-  },
+
+  metricDotCyan: { width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#38bdf8', boxShadow: '0 0 8px #38bdf8' },
+  metricPillCyan: { fontSize: '9px', fontWeight: '800', color: '#38bdf8', backgroundColor: '#0c2233', padding: '3px 8px', borderRadius: '10px', border: '1px solid #38bdf844' },
 };
