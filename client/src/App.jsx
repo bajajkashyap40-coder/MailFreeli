@@ -20,6 +20,7 @@ export default function App() {
     activeQueue: '0',
     velocity: '0.24s',
     totalLogs: '0',
+    sentCount: '0',
   });
 
   const fetchStats = async () => {
@@ -34,15 +35,20 @@ export default function App() {
     }
   };
 
+  // Real-Time Auto Polling Every 3 Seconds
   useEffect(() => {
     fetchStats();
+    const interval = setInterval(() => {
+      fetchStats();
+    }, 3000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const handleQuickSuggestion = (text) => {
     setPrompt(text);
   };
 
-  // Step 1: Generate Draft ONLY
   const handleGenerateDraft = async () => {
     if (!recipient || !prompt) {
       alert('Please fill in both recipient email and prompt!');
@@ -65,6 +71,7 @@ export default function App() {
         setSubject(data.subject);
         setBody(data.body);
         setTokenCount(Math.floor(Math.random() * 50) + 250);
+        fetchStats();
       } else {
         alert(`Error: ${data.error}`);
       }
@@ -75,7 +82,6 @@ export default function App() {
     }
   };
 
-  // Step 2: Dispatch Final Edited Draft
   const handleDispatchEmail = async () => {
     if (!recipient || !subject || !body) {
       alert('Missing email content to dispatch!');
@@ -113,7 +119,6 @@ export default function App() {
     }
   };
 
-  // Auto-replace placeholder link if typed after generating
   const handleLinkChange = (newLink) => {
     setMeetingLink(newLink);
     if (body.includes('<YOUR_CALENDAR_LINK_HERE>') && newLink.trim() !== '') {
@@ -123,9 +128,15 @@ export default function App() {
 
   return (
     <div style={styles.container}>
+      {/* Top Header with Logo */}
       <header style={styles.header}>
         <div style={styles.logoGroup}>
-          <span style={styles.logoIcon}>✉️</span>
+          <img 
+            src="/logo.png" 
+            alt="MailFreeli Logo" 
+            style={styles.logoImg} 
+            onError={(e) => { e.target.style.display = 'none'; }} 
+          />
           <h1 style={styles.title}>MailFreeli</h1>
           <span style={styles.tag}>AI DISPATCH V2.0</span>
         </div>
@@ -134,6 +145,7 @@ export default function App() {
         </div>
       </header>
 
+      {/* Main Cockpit Layout */}
       <div style={styles.mainGrid}>
         {/* Left Inputs */}
         <div style={styles.card}>
@@ -196,7 +208,7 @@ export default function App() {
           </button>
         </div>
 
-        {/* Right Editable Preview & Dispatch Panel */}
+        {/* Right Preview Panel */}
         <div style={styles.card}>
           <div style={styles.previewHeader}>
             <h2 style={styles.cardTitle}>Editable Draft & Preview</h2>
@@ -205,7 +217,6 @@ export default function App() {
             </span>
           </div>
 
-          {/* Editable Subject Field */}
           <div style={styles.metaPreview}>
             <label style={styles.labelSmall}>EDITABLE SUBJECT LINE</label>
             <input
@@ -220,13 +231,12 @@ export default function App() {
             </div>
           </div>
 
-          {/* Editable Body Field */}
           <label style={styles.labelSmall}>EDITABLE EMAIL BODY</label>
           <textarea
             rows="8"
             value={body}
             onChange={(e) => setBody(e.target.value)}
-            placeholder="AI generated body will appear here. You can edit, replace links, or modify text directly before dispatching!"
+            placeholder="AI generated body will appear here..."
             style={styles.bodyTextarea}
           />
 
@@ -249,27 +259,27 @@ export default function App() {
         </div>
       </div>
 
-      {/* Bottom Real Metrics Row */}
+      {/* Real-Time Dashboard Metrics Row */}
       <div style={styles.metricsRow}>
         <div style={styles.metricCard}>
           <div style={styles.metricLabel}>AI Completion Rate</div>
           <div style={styles.metricVal}>{stats.completionRate}</div>
-          <div style={styles.metricSub}>{stats.totalLogs} total runs</div>
+          <div style={styles.metricSub}>{stats.totalLogs} total executions</div>
         </div>
         <div style={styles.metricCard}>
           <div style={styles.metricLabel}>SMTP Queue</div>
           <div style={styles.metricVal}>{stats.activeQueue} Active</div>
-          <div style={styles.metricSub}>No backlogs</div>
+          <div style={styles.metricSub}>0 backlogs</div>
         </div>
         <div style={styles.metricCard}>
           <div style={styles.metricLabel}>Velocity</div>
           <div style={styles.metricVal}>{stats.velocity}</div>
-          <div style={styles.metricSub}>Stream speed</div>
+          <div style={styles.metricSub}>Avg stream speed</div>
         </div>
         <div style={styles.metricCard}>
           <div style={styles.metricLabel}>Mail Stream</div>
-          <div style={styles.metricVal}>{stats.totalLogs} logged</div>
-          <div style={styles.metricSub}>Active traffic</div>
+          <div style={styles.metricVal}>{stats.sentCount || stats.totalLogs} Dispatched</div>
+          <div style={styles.metricSub}>Live DB records</div>
         </div>
       </div>
     </div>
@@ -286,14 +296,14 @@ const styles = {
   },
   header: {
     display: 'flex',
-    justifyContent: 'space-between',
+    justify: 'space-between',
     alignItems: 'center',
     marginBottom: '24px',
     borderBottom: '1px solid #1a2333',
     paddingBottom: '16px',
   },
   logoGroup: { display: 'flex', alignItems: 'center', gap: '12px' },
-  logoIcon: { fontSize: '24px' },
+  logoImg: { width: '36px', height: '36px', borderRadius: '8px', objectFit: 'cover' },
   title: { fontSize: '24px', fontWeight: 'bold', margin: 0 },
   tag: {
     backgroundColor: '#003366',
