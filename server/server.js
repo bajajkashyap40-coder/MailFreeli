@@ -20,29 +20,30 @@ mongoose.connect(process.env.MONGO_URI)
 // 2. Initialize Groq AI Client
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-// Helper to safely get an active model ID that explicitly supports JSON output mode
+// Helper to safely get an active, existing Groq model ID
 async function getValidModel() {
   try {
     const modelsList = await groq.models.list();
     const available = modelsList.data.map((m) => m.id);
 
-    // Filter candidates to active models known for robust response_format support
+    // Active Groq production models supporting structured JSON output
     const candidates = [
-      'llama-3.3-70b-versatile',
+      'llama-3.1-8b-instant',
       'llama3-70b-8192',
       'llama3-8b-8192',
       'mixtral-8x7b-32768',
-      'llama-3.1-8b-instant',
+      'llama-3.3-70b-versatile'
     ];
 
     const matched = candidates.find((model) => available.includes(model));
-    return matched || 'llama-3.3-70b-versatile';
+    return matched || 'llama-3.1-8b-instant';
   } catch (err) {
-    return 'llama-3.3-70b-versatile';
+    console.warn('Unable to query Groq models list, defaulting to llama-3.1-8b-instant');
+    return 'llama-3.1-8b-instant';
   }
 }
 
-// 3. Dynamic Dashboard Stats Endpoint (Real-Time DB Queries)
+// 3. Dynamic Dashboard Stats Endpoint
 app.get('/api/stats', async (req, res) => {
   try {
     const totalEmails = await Email.countDocuments();
@@ -66,7 +67,7 @@ app.get('/api/stats', async (req, res) => {
   }
 });
 
-// 4. STEP 1: AI Email Draft Generation ONLY (No Dispatch)
+// 4. STEP 1: AI Email Draft Generation
 app.post('/api/generate-draft', async (req, res) => {
   const { recipient, prompt, meetingLink } = req.body;
 
@@ -81,24 +82,43 @@ app.post('/api/generate-draft', async (req, res) => {
       ? `Use this exact meeting link in the email: "${meetingLink}".` 
       : 'If a meeting or calendar link is needed, use the exact placeholder tag: "<YOUR_CALENDAR_LINK_HERE>". NEVER invent fake URLs.';
 
-    const completion = await groq.chat.completions.create({
-      messages: [
-        {
-          role: 'system',
-          content: `You are an elite email generator.
+    let completion;
+    try {
+      completion = await groq.chat.completions.create({
+        messages: [
+          {
+            role: 'system',
+            content: `You are an elite email generator.
 Return ONLY a valid JSON object with two keys: "subject" and "body". Do not wrap in markdown or add extra text.
 Rules:
 1. Do not invent fake links, URLs, or domains.
 2. ${linkInstruction}`,
-        },
-        {
-          role: 'user',
-          content: `Write an email based on this prompt: "${prompt}". Recipient is ${recipient}.`,
-        },
-      ],
-      model: selectedModel,
-      response_format: { type: 'json_object' },
-    });
+          },
+          {
+            role: 'user',
+            content: `Write an email based on this prompt: "${prompt}". Recipient is ${recipient}.`,
+          },
+        ],
+        model: selectedModel,
+        response_format: { type: 'json_object' },
+      });
+    } catch (modelErr) {
+      console.warn(`Primary model ${selectedModel} failed. Falling back to llama-3.1-8b-instant.`);
+      completion = await groq.chat.completions.create({
+        messages: [
+          {
+            role: 'system',
+            content: `You are an elite email generator. Return ONLY a valid JSON object with two keys: "subject" and "body".`,
+          },
+          {
+            role: 'user',
+            content: `Write an email based on this prompt: "${prompt}". Recipient is ${recipient}.`,
+          },
+        ],
+        model: 'llama-3.1-8b-instant',
+        response_format: { type: 'json_object' },
+      });
+    }
 
     const aiContent = JSON.parse(completion.choices[0]?.message?.content || '{}');
     let subject = aiContent.subject || 'Follow-up from MailFreeli';

@@ -124,7 +124,6 @@ export default function App() {
 
   return (
     <div style={styles.container}>
-      {/* Remove global margins and default page borders */}
       <style>{`
         * {
           box-sizing: border-box;
@@ -362,7 +361,6 @@ const styles = {
     overflowX: 'hidden',
     fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   },
-  
   bgGlow1: {
     position: 'absolute',
     top: '-100px',
@@ -387,7 +385,6 @@ const styles = {
     pointerEvents: 'none',
     zIndex: 0,
   },
-
   header: {
     display: 'flex',
     alignItems: 'center',
@@ -399,7 +396,6 @@ const styles = {
   logoImg: { width: '42px', height: '42px', borderRadius: '12px', objectFit: 'cover' },
   title: { fontSize: '24px', fontWeight: '800', margin: 0, color: '#1C1917', letterSpacing: '-0.5px' },
   subTitle: { margin: '2px 0 0 0', fontSize: '13px', color: '#78716C', fontWeight: '500' },
-  
   mainGrid: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
@@ -518,7 +514,6 @@ const styles = {
     fontWeight: '600',
   },
   greenCheck: { marginRight: '6px' },
-
   metricsRow: {
     display: 'grid',
     gridTemplateColumns: 'repeat(4, 1fr)',
@@ -541,7 +536,6 @@ const styles = {
   metricLabel: { fontSize: '12px', color: '#78716C', fontWeight: '600', letterSpacing: '0.3px' },
   metricVal: { fontSize: '26px', fontWeight: '800', color: '#1C1917', margin: '2px 0 6px 0' },
   metricSub: { fontSize: '11px', color: '#A8A29E' },
-
   metricDotWarm: { width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#C87D55', boxShadow: '0 0 8px rgba(200, 125, 85, 0.6)' },
   metricPillWarm: { 
     fontSize: '10px', 
