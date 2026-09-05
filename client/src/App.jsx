@@ -14,6 +14,9 @@ export default function App() {
   const [generating, setGenerating] = useState(false);
   const [dispatching, setDispatching] = useState(false);
 
+  // Custom Toast Alert State
+  const [toast, setToast] = useState(null); // { message: string, type: 'success' | 'error' }
+
   const [stats, setStats] = useState({
     completionRate: '100.0%',
     activeQueue: '0',
@@ -21,6 +24,13 @@ export default function App() {
     totalLogs: '0',
     sentCount: '0',
   });
+
+  const showToast = (message, type = 'error') => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast(null);
+    }, 4000);
+  };
 
   const fetchStats = async () => {
     try {
@@ -49,7 +59,7 @@ export default function App() {
 
   const handleGenerateDraft = async () => {
     if (!recipient || !prompt) {
-      alert('Please fill in both recipient email and prompt!');
+      showToast('Please fill in both recipient email and prompt!', 'error');
       return;
     }
 
@@ -68,12 +78,13 @@ export default function App() {
       if (response.ok) {
         setSubject(data.subject);
         setBody(data.body);
+        showToast('AI Draft generated successfully!', 'success');
         fetchStats();
       } else {
-        alert(`Error: ${data.error}`);
+        showToast(`Error: ${data.error}`, 'error');
       }
     } catch (error) {
-      alert('Failed to generate draft. Check server console.');
+      showToast('Failed to generate draft. Check server console.', 'error');
     } finally {
       setGenerating(false);
     }
@@ -81,7 +92,7 @@ export default function App() {
 
   const handleDispatchEmail = async () => {
     if (!recipient || !subject || !body) {
-      alert('Missing email content to dispatch!');
+      showToast('Missing email content to dispatch!', 'error');
       return;
     }
 
@@ -104,12 +115,13 @@ export default function App() {
 
       if (response.ok) {
         setIsDispatched(true);
+        showToast('Email dispatched via SMTP successfully!', 'success');
         fetchStats();
       } else {
-        alert(`Error: ${data.error}`);
+        showToast(`Error: ${data.error}`, 'error');
       }
     } catch (error) {
-      alert('Failed to dispatch email.');
+      showToast('Failed to dispatch email.', 'error');
     } finally {
       setDispatching(false);
     }
@@ -124,7 +136,6 @@ export default function App() {
 
   return (
     <div style={styles.container}>
-      {/* Global Style Reset & Scrollbar Control */}
       <style>{`
         * {
           box-sizing: border-box;
@@ -137,7 +148,6 @@ export default function App() {
           overflow-x: hidden;
           background-color: #FAF7F2;
         }
-        /* Sleek custom scrollbars */
         ::-webkit-scrollbar {
           width: 6px;
         }
@@ -158,11 +168,30 @@ export default function App() {
           50% { transform: scale(1.2) translate(-25px, 25px); opacity: 0.5; }
           100% { transform: scale(1) translate(0px, 0px); opacity: 0.3; }
         }
+        @keyframes slideIn {
+          from { transform: translateY(-20px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
       `}</style>
 
       {/* Ambient Animated Glows */}
       <div style={styles.bgGlow1} />
       <div style={styles.bgGlow2} />
+
+      {/* Custom Theme Toast Alert */}
+      {toast && (
+        <div 
+          style={{
+            ...styles.toast,
+            borderColor: toast.type === 'success' ? '#16A34A' : '#DC2626',
+            color: toast.type === 'success' ? '#15803D' : '#991B1B',
+            backgroundColor: toast.type === 'success' ? '#F0FDF4' : '#FEF2F2',
+          }}
+        >
+          <span>{toast.type === 'success' ? '✓' : '⚠️'}</span>
+          <span>{toast.message}</span>
+        </div>
+      )}
 
       {/* Top Header */}
       <header style={styles.header}>
@@ -375,6 +404,22 @@ const styles = {
     position: 'relative',
     overflow: 'hidden',
     fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+  },
+  toast: {
+    position: 'fixed',
+    top: '24px',
+    right: '24px',
+    zIndex: 9999,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '12px 20px',
+    borderRadius: '12px',
+    border: '1px solid',
+    boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
+    fontSize: '13px',
+    fontWeight: '600',
+    animation: 'slideIn 0.3s ease-out',
   },
   bgGlow1: {
     position: 'absolute',
