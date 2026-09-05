@@ -3,14 +3,12 @@ import React, { useState, useEffect } from 'react';
 export default function App() {
   const [sender, setSender] = useState('');
   const [recipient, setRecipient] = useState('');
-  const [prompt, setPrompt] = useState('Draft a follow-up email proposing a quick meeting.');
+  const [prompt, setPrompt] = useState('');
   const [meetingLink, setMeetingLink] = useState('');
   
   // Preview States
-  const [subject, setSubject] = useState('Quick Meeting to Discuss Our Project');
-  const [body, setBody] = useState(
-    "Hi there,\n\nI hope you're doing well.\n\nI wanted to follow up and see if you'd be available for a quick meeting to discuss our project and next steps.\n\nPlease let me know a time that works for you.\n\nLooking forward to it!\n\nBest regards,\nYour Name"
-  );
+  const [subject, setSubject] = useState('');
+  const [body, setBody] = useState('');
   const [isDispatched, setIsDispatched] = useState(false);
 
   const [generating, setGenerating] = useState(false);
@@ -94,7 +92,7 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          sender: sender || 'you@yourcompany.com',
+          sender: sender || 'sender@domain.com',
           recipient,
           prompt,
           subject,
@@ -126,6 +124,32 @@ export default function App() {
 
   return (
     <div style={styles.container}>
+      {/* Remove global margins and default page borders */}
+      <style>{`
+        * {
+          box-sizing: border-box;
+        }
+        body {
+          margin: 0;
+          padding: 0;
+          background-color: #FAF7F2;
+        }
+        @keyframes pulseGlow {
+          0% { transform: scale(1) translate(0px, 0px); opacity: 0.4; }
+          50% { transform: scale(1.15) translate(30px, -20px); opacity: 0.6; }
+          100% { transform: scale(1) translate(0px, 0px); opacity: 0.4; }
+        }
+        @keyframes floatGlow {
+          0% { transform: scale(1) translate(0px, 0px); opacity: 0.3; }
+          50% { transform: scale(1.2) translate(-25px, 25px); opacity: 0.5; }
+          100% { transform: scale(1) translate(0px, 0px); opacity: 0.3; }
+        }
+      `}</style>
+
+      {/* Ambient Animated Glows */}
+      <div style={styles.bgGlow1} />
+      <div style={styles.bgGlow2} />
+
       {/* Top Header */}
       <header style={styles.header}>
         <div style={styles.logoGroup}>
@@ -152,7 +176,7 @@ export default function App() {
           <label style={styles.label}>FROM (SENDER EMAIL)</label>
           <input
             type="email"
-            placeholder="you@yourcompany.com"
+            placeholder="sender@domain.com"
             value={sender}
             onChange={(e) => setSender(e.target.value)}
             style={styles.input}
@@ -161,7 +185,7 @@ export default function App() {
           <label style={styles.label}>TO (RECIPIENT EMAIL)</label>
           <input
             type="email"
-            placeholder="recipient@example.com"
+            placeholder="recipient@domain.com"
             value={recipient}
             onChange={(e) => setRecipient(e.target.value)}
             style={styles.input}
@@ -170,7 +194,7 @@ export default function App() {
           <label style={styles.label}>MEETING / CALENDAR LINK (OPTIONAL)</label>
           <input
             type="text"
-            placeholder="https://cal.com/your-name or Google Meet URL"
+            placeholder="Calendar or Google Meet URL"
             value={meetingLink}
             onChange={(e) => handleLinkChange(e.target.value)}
             style={styles.input}
@@ -179,7 +203,7 @@ export default function App() {
           <label style={styles.label}>AI CONTEXT / PROMPT</label>
           <textarea
             rows="3"
-            placeholder="Draft a follow-up email proposing a quick meeting."
+            placeholder="Enter AI prompt here..."
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             style={styles.textarea}
@@ -229,6 +253,7 @@ export default function App() {
           </div>
           <input
             type="text"
+            placeholder="Email Subject"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
             style={styles.input}
@@ -237,11 +262,12 @@ export default function App() {
           <label style={styles.label}>EMAIL PREVIEW</label>
           <div style={styles.previewContainer}>
             <div style={styles.previewMetaBox}>
-              <div><strong>To:</strong> {recipient || 'recipient@example.com'}</div>
-              <div><strong>From:</strong> {sender || 'you@yourcompany.com'}</div>
-              <div><strong>Subject:</strong> {subject || 'Quick Meeting to Discuss Our Project'}</div>
+              <div><strong>To:</strong> {recipient || 'recipient@domain.com'}</div>
+              <div><strong>From:</strong> {sender || 'sender@domain.com'}</div>
+              <div><strong>Subject:</strong> {subject || 'Email Subject'}</div>
             </div>
             <textarea
+              placeholder="Your AI-generated email body will appear here..."
               value={body}
               onChange={(e) => setBody(e.target.value)}
               style={styles.previewBodyTextarea}
@@ -266,59 +292,59 @@ export default function App() {
           </button>
 
           <div style={styles.statusIndicator}>
-            <span style={styles.greenCheck}>✓</span> {isDispatched ? 'Dispatched via SMTP' : 'Draft ready • Ready to send'}
+            <span style={styles.greenCheck}>✓</span> {isDispatched ? 'Dispatched via SMTP' : 'Ready to generate'}
           </div>
         </div>
       </div>
 
-      {/* Uniform Cyan Neon Metrics Section */}
+      {/* Bottom Metrics Cards */}
       <div style={styles.metricsRow}>
         <div style={styles.metricCard}>
           <div>
             <div style={styles.metricHeader}>
-              <span style={styles.metricDotCyan}></span>
+              <span style={styles.metricDotWarm}></span>
               <span style={styles.metricLabel}>AI Success Rate</span>
             </div>
             <div style={styles.metricVal}>{stats.completionRate}</div>
             <div style={styles.metricSub}>{stats.totalLogs} total executions</div>
           </div>
-          <div style={styles.metricPillCyan}>LIVE</div>
+          <div style={styles.metricPillWarm}>LIVE</div>
         </div>
 
         <div style={styles.metricCard}>
           <div>
             <div style={styles.metricHeader}>
-              <span style={styles.metricDotCyan}></span>
+              <span style={styles.metricDotWarm}></span>
               <span style={styles.metricLabel}>SMTP Queue</span>
             </div>
             <div style={styles.metricVal}>{stats.activeQueue}</div>
             <div style={styles.metricSub}>0 Backlog</div>
           </div>
-          <div style={styles.metricPillCyan}>READY</div>
+          <div style={styles.metricPillWarm}>READY</div>
         </div>
 
         <div style={styles.metricCard}>
           <div>
             <div style={styles.metricHeader}>
-              <span style={styles.metricDotCyan}></span>
+              <span style={styles.metricDotWarm}></span>
               <span style={styles.metricLabel}>Avg Stream Velocity</span>
             </div>
             <div style={styles.metricVal}>{stats.velocity}</div>
             <div style={styles.metricSub}>Response time</div>
           </div>
-          <div style={styles.metricPillCyan}>FAST</div>
+          <div style={styles.metricPillWarm}>FAST</div>
         </div>
 
         <div style={styles.metricCard}>
           <div>
             <div style={styles.metricHeader}>
-              <span style={styles.metricDotCyan}></span>
+              <span style={styles.metricDotWarm}></span>
               <span style={styles.metricLabel}>Total Mails Sent</span>
             </div>
             <div style={styles.metricVal}>{stats.sentCount || stats.totalLogs}</div>
             <div style={styles.metricSub}>Live DB records</div>
           </div>
-          <div style={styles.metricPillCyan}>SYNCED</div>
+          <div style={styles.metricPillWarm}>SYNCED</div>
         </div>
       </div>
     </div>
@@ -327,119 +353,155 @@ export default function App() {
 
 const styles = {
   container: {
-    backgroundColor: '#07090e',
-    color: '#e2e8f0',
+    backgroundColor: '#FAF7F2',
+    color: '#2D2825',
     minHeight: '100vh',
-    padding: '24px 36px',
+    width: '100%',
+    padding: '28px 40px',
+    position: 'relative',
+    overflowX: 'hidden',
     fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   },
+  
+  bgGlow1: {
+    position: 'absolute',
+    top: '-100px',
+    left: '-100px',
+    width: '450px',
+    height: '450px',
+    borderRadius: '50%',
+    background: 'radial-gradient(circle, rgba(230, 180, 130, 0.3) 0%, rgba(250, 247, 242, 0) 70%)',
+    animation: 'pulseGlow 10s infinite ease-in-out',
+    pointerEvents: 'none',
+    zIndex: 0,
+  },
+  bgGlow2: {
+    position: 'absolute',
+    bottom: '-80px',
+    right: '-80px',
+    width: '500px',
+    height: '500px',
+    borderRadius: '50%',
+    background: 'radial-gradient(circle, rgba(215, 160, 110, 0.25) 0%, rgba(250, 247, 242, 0) 70%)',
+    animation: 'floatGlow 12s infinite ease-in-out',
+    pointerEvents: 'none',
+    zIndex: 0,
+  },
+
   header: {
     display: 'flex',
     alignItems: 'center',
-    marginBottom: '24px',
+    marginBottom: '28px',
+    position: 'relative',
+    zIndex: 1,
   },
-  logoGroup: { display: 'flex', alignItems: 'center', gap: '12px' },
-  logoImg: { width: '40px', height: '40px', borderRadius: '10px', objectFit: 'cover' },
-  title: { fontSize: '22px', fontWeight: '700', margin: 0, color: '#f8fafc' },
-  subTitle: { margin: 0, fontSize: '13px', color: '#64748b' },
+  logoGroup: { display: 'flex', alignItems: 'center', gap: '14px' },
+  logoImg: { width: '42px', height: '42px', borderRadius: '12px', objectFit: 'cover' },
+  title: { fontSize: '24px', fontWeight: '800', margin: 0, color: '#1C1917', letterSpacing: '-0.5px' },
+  subTitle: { margin: '2px 0 0 0', fontSize: '13px', color: '#78716C', fontWeight: '500' },
+  
   mainGrid: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
-    gap: '20px',
-    marginBottom: '20px',
+    gap: '24px',
+    marginBottom: '28px',
+    position: 'relative',
+    zIndex: 1,
   },
   card: {
-    backgroundColor: '#0b0f17',
-    border: '1px solid #161e2e',
-    borderRadius: '14px',
-    padding: '20px',
+    backgroundColor: '#FFFFFF',
+    border: '1px solid #E7E0D6',
+    borderRadius: '16px',
+    padding: '24px',
     display: 'flex',
     flexDirection: 'column',
+    boxShadow: '0 8px 30px rgba(180, 160, 140, 0.08)',
   },
-  cardTitle: { fontSize: '16px', margin: '0 0 2px 0', fontWeight: '600', color: '#f8fafc' },
-  cardSub: { color: '#64748b', fontSize: '12px', margin: '0 0 16px 0' },
-  label: { fontSize: '10px', color: '#64748b', fontWeight: '700', letterSpacing: '0.5px', marginBottom: '6px', display: 'block' },
-  labelSmall: { fontSize: '10px', color: '#64748b', fontWeight: '700', letterSpacing: '0.5px', marginBottom: '8px', display: 'block' },
+  cardTitle: { fontSize: '17px', margin: '0 0 4px 0', fontWeight: '700', color: '#1C1917' },
+  cardSub: { color: '#78716C', fontSize: '12px', margin: '0 0 18px 0' },
+  label: { fontSize: '11px', color: '#57534E', fontWeight: '700', letterSpacing: '0.5px', marginBottom: '6px', display: 'block' },
+  labelSmall: { fontSize: '11px', color: '#57534E', fontWeight: '700', letterSpacing: '0.5px', marginBottom: '10px', display: 'block' },
   input: {
-    backgroundColor: '#0f141f',
-    border: '1px solid #1a2333',
-    borderRadius: '8px',
-    padding: '10px 12px',
-    color: '#f8fafc',
+    backgroundColor: '#F5F0EB',
+    border: '1px solid #E2D9CF',
+    borderRadius: '10px',
+    padding: '11px 14px',
+    color: '#1C1917',
     fontSize: '13px',
-    marginBottom: '14px',
+    marginBottom: '16px',
     outline: 'none',
   },
   textarea: {
-    backgroundColor: '#0f141f',
-    border: '1px solid #1a2333',
-    borderRadius: '8px',
-    padding: '10px 12px',
-    color: '#f8fafc',
+    backgroundColor: '#F5F0EB',
+    border: '1px solid #E2D9CF',
+    borderRadius: '10px',
+    padding: '11px 14px',
+    color: '#1C1917',
     fontSize: '13px',
-    marginBottom: '14px',
+    marginBottom: '16px',
     outline: 'none',
     resize: 'none',
   },
-  suggestionsGroup: { marginBottom: '16px' },
-  btnGroup: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
+  suggestionsGroup: { marginBottom: '20px' },
+  btnGroup: { display: 'flex', gap: '10px', flexWrap: 'wrap' },
   chipBtn: {
-    backgroundColor: '#0f141f',
-    border: '1px solid #1a2333',
-    color: '#94a3b8',
-    padding: '6px 12px',
-    borderRadius: '8px',
+    backgroundColor: '#F0E8DF',
+    border: '1px solid #DFD5C8',
+    color: '#44403C',
+    padding: '7px 14px',
+    borderRadius: '9px',
     fontSize: '12px',
+    fontWeight: '500',
     cursor: 'pointer',
   },
   generateBtn: {
-    backgroundColor: '#0284c7',
+    backgroundColor: '#C87D55',
     border: 'none',
-    borderRadius: '10px',
-    padding: '12px',
+    borderRadius: '12px',
+    padding: '14px',
     cursor: 'pointer',
-    color: '#ffffff',
+    color: '#FFFFFF',
     marginTop: 'auto',
-    boxShadow: '0 0 20px rgba(2, 132, 199, 0.3)',
+    boxShadow: '0 6px 20px rgba(200, 125, 85, 0.25)',
   },
   dispatchBtn: {
-    backgroundColor: '#0284c7',
+    backgroundColor: '#C87D55',
     border: 'none',
-    borderRadius: '10px',
-    padding: '12px',
+    borderRadius: '12px',
+    padding: '14px',
     cursor: 'pointer',
-    color: '#ffffff',
-    marginTop: '16px',
-    boxShadow: '0 0 20px rgba(2, 132, 199, 0.3)',
+    color: '#FFFFFF',
+    marginTop: '18px',
+    boxShadow: '0 6px 20px rgba(200, 125, 85, 0.25)',
   },
   btnContent: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' },
-  btnTitle: { fontSize: '13px', fontWeight: '700', lineHeight: '1.2' },
-  btnSub: { fontSize: '10px', opacity: 0.8 },
+  btnTitle: { fontSize: '14px', fontWeight: '700', lineHeight: '1.2' },
+  btnSub: { fontSize: '11px', opacity: 0.9 },
   previewHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' },
   subjectRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  charCount: { fontSize: '10px', color: '#64748b' },
+  charCount: { fontSize: '11px', color: '#A8A29E' },
   previewContainer: {
-    backgroundColor: '#0d121c',
-    border: '1px solid #1a2333',
-    borderRadius: '8px',
-    padding: '12px',
+    backgroundColor: '#F6F1EA',
+    border: '1px solid #E5DBD0',
+    borderRadius: '10px',
+    padding: '14px',
     flexGrow: 1,
     display: 'flex',
     flexDirection: 'column',
   },
   previewMetaBox: {
-    borderBottom: '1px solid #161e2e',
-    paddingBottom: '8px',
-    marginBottom: '12px',
-    fontSize: '11px',
-    color: '#94a3b8',
+    borderBottom: '1px solid #E2D7CB',
+    paddingBottom: '10px',
+    marginBottom: '14px',
+    fontSize: '12px',
+    color: '#57534E',
     lineHeight: '1.6',
   },
   previewBodyTextarea: {
     backgroundColor: 'transparent',
     border: 'none',
-    color: '#cbd5e1',
-    fontSize: '12px',
+    color: '#2D2825',
+    fontSize: '13px',
     lineHeight: '1.6',
     outline: 'none',
     resize: 'none',
@@ -450,34 +512,45 @@ const styles = {
   statusIndicator: {
     display: 'flex',
     alignItems: 'center',
-    fontSize: '11px',
-    color: '#22c55e',
-    marginTop: '12px',
+    fontSize: '12px',
+    color: '#16A34A',
+    marginTop: '14px',
+    fontWeight: '600',
   },
   greenCheck: { marginRight: '6px' },
 
-  // Uniform Bottom Metrics Styling
   metricsRow: {
     display: 'grid',
     gridTemplateColumns: 'repeat(4, 1fr)',
-    gap: '16px',
+    gap: '24px',
+    position: 'relative',
+    zIndex: 1,
   },
   metricCard: {
-    backgroundColor: '#0b0f17',
-    border: '1px solid #1e293b',
-    borderTop: '2px solid #38bdf8',
-    borderRadius: '12px',
-    padding: '16px 20px',
+    backgroundColor: '#FFFFFF',
+    border: '1px solid #E7E0D6',
+    borderTop: '3px solid #C87D55',
+    borderRadius: '14px',
+    padding: '20px 24px',
     display: 'flex',
     justify: 'space-between',
     alignItems: 'flex-start',
-    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)',
+    boxShadow: '0 6px 25px rgba(180, 160, 140, 0.08)',
   },
-  metricHeader: { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' },
-  metricLabel: { fontSize: '11px', color: '#94a3b8', fontWeight: '600', letterSpacing: '0.3px' },
-  metricVal: { fontSize: '24px', fontWeight: '800', color: '#f8fafc', margin: '2px 0 4px 0' },
-  metricSub: { fontSize: '10px', color: '#64748b' },
+  metricHeader: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' },
+  metricLabel: { fontSize: '12px', color: '#78716C', fontWeight: '600', letterSpacing: '0.3px' },
+  metricVal: { fontSize: '26px', fontWeight: '800', color: '#1C1917', margin: '2px 0 6px 0' },
+  metricSub: { fontSize: '11px', color: '#A8A29E' },
 
-  metricDotCyan: { width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#38bdf8', boxShadow: '0 0 8px #38bdf8' },
-  metricPillCyan: { fontSize: '9px', fontWeight: '800', color: '#38bdf8', backgroundColor: '#0c2233', padding: '3px 8px', borderRadius: '10px', border: '1px solid #38bdf844' },
+  metricDotWarm: { width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#C87D55', boxShadow: '0 0 8px rgba(200, 125, 85, 0.6)' },
+  metricPillWarm: { 
+    fontSize: '10px', 
+    fontWeight: '800', 
+    color: '#C87D55', 
+    backgroundColor: '#FBF0E9', 
+    padding: '5px 12px', 
+    borderRadius: '12px', 
+    border: '1px solid #F3D9C9',
+    marginLeft: '12px'
+  },
 };
