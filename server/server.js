@@ -20,19 +20,23 @@ mongoose.connect(process.env.MONGO_URI)
 // 2. Initialize Groq AI Client
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-// Helper to safely get an active model ID
+// Helper to safely get an active model ID that explicitly supports JSON output mode
 async function getValidModel() {
   try {
     const modelsList = await groq.models.list();
     const available = modelsList.data.map((m) => m.id);
 
+    // Filter candidates to active models known for robust response_format support
     const candidates = [
       'llama-3.3-70b-versatile',
+      'llama3-70b-8192',
+      'llama3-8b-8192',
+      'mixtral-8x7b-32768',
       'llama-3.1-8b-instant',
     ];
 
     const matched = candidates.find((model) => available.includes(model));
-    return matched || available[0] || 'llama-3.3-70b-versatile';
+    return matched || 'llama-3.3-70b-versatile';
   } catch (err) {
     return 'llama-3.3-70b-versatile';
   }
