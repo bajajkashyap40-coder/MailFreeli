@@ -17,10 +17,10 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB connected successfully'))
   .catch((err) => console.error('MongoDB Connection Error:', err));
 
-// 2. Initialize Groq AI Client with explicit timeout
+// 2. Initialize Groq AI Client
 const groq = new Groq({ 
   apiKey: process.env.GROQ_API_KEY,
-  timeout: 10000 // 10 seconds timeout for AI generation
+  timeout: 10000 
 });
 
 // Helper to safely get active model
@@ -70,7 +70,7 @@ app.get('/api/stats', async (req, res) => {
   }
 });
 
-// 4. STEP 1: AI Email Draft Generation with Instant Retry Loop
+// 4. STEP 1: AI Email Draft Generation
 app.post('/api/generate-draft', async (req, res) => {
   const { recipient, prompt, meetingLink } = req.body;
 
@@ -113,7 +113,7 @@ Rules:
     } catch (err) {
       console.warn(`Generation attempt ${attempt} failed:`, err.message);
       if (attempt === 2) {
-        return res.status(500).json({ error: 'AI generation timed out. Please click generate again.' });
+        return res.status(500).json({ error: 'AI generation timed out. Please try again.' });
       }
     }
   }
@@ -136,7 +136,7 @@ Rules:
   res.status(200).json({ subject, body });
 });
 
-// 5. STEP 2: Dispatch Edited Email via Nodemailer with Handshake Logging
+// 5. STEP 2: Dispatch Edited Email via Nodemailer
 app.post('/api/dispatch-email', async (req, res) => {
   const { sender, recipient, prompt, subject, body } = req.body;
 
@@ -150,7 +150,7 @@ app.post('/api/dispatch-email', async (req, res) => {
     const transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
       port: 587,
-      secure: false, // TLS
+      secure: false, 
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
@@ -158,13 +158,14 @@ app.post('/api/dispatch-email', async (req, res) => {
       tls: {
         rejectUnauthorized: false,
       },
-      logger: true, // Log full SMTP traffic to terminal
-      debug: true,  // Output connection handshake traces
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-      socketTimeout: 10000,
+      logger: true,
+      debug: true, 
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 15000,
     });
 
+    // Send Mail
     await transporter.sendMail({
       from: `"${senderEmail}" <${process.env.EMAIL_USER}>`,
       to: recipient,
@@ -173,17 +174,21 @@ app.post('/api/dispatch-email', async (req, res) => {
       replyTo: senderEmail,
     });
 
-    const newEmail = new Email({
-      sender: senderEmail,
-      recipient,
-      prompt,
-      subject,
-      body,
-      status: 'SENT',
-    });
-    await newEmail.save();
+    // Non-blocking Database Log Attempt
+    try {
+      await Email.create({
+        sender: senderEmail,
+        recipient,
+        prompt: prompt || 'Direct Dispatch',
+        subject,
+        body,
+        status: 'SENT',
+      });
+    } catch (dbErr) {
+      console.warn('Email sent, but DB logging failed:', dbErr.message);
+    }
 
-    res.status(200).json({ message: 'Email dispatched and logged successfully!' });
+    res.status(200).json({ message: 'Email dispatched successfully!' });
   } catch (error) {
     console.error('Dispatch error details:', error.message);
     
@@ -191,11 +196,13 @@ app.post('/api/dispatch-email', async (req, res) => {
       await Email.create({
         sender: senderEmail,
         recipient,
-        prompt,
+        prompt: prompt || 'Direct Dispatch',
+        subject,
+        body,
         status: 'FAILED',
       });
     } catch (dbErr) {
-      console.error('Failed to log error to DB:', dbErr);
+      console.error('Failed to log error to DB:', dbErr.message);
     }
 
     res.status(500).json({ error: error.message || 'Failed to dispatch email.' });
