@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 
-// Railway / Environment Dynamic Base URL
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 export default function App() {
@@ -8,7 +7,10 @@ export default function App() {
   const [recipient, setRecipient] = useState('');
   const [prompt, setPrompt] = useState('');
   const [meetingLink, setMeetingLink] = useState('');
-  
+
+  // Mobile Menu Drawer State
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   // Preview States
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
@@ -17,7 +19,7 @@ export default function App() {
   const [generating, setGenerating] = useState(false);
   const [dispatching, setDispatching] = useState(false);
 
-  // Custom Toast Alert State
+  // Centered Toast Alert State (Auto-dismisses in 3 seconds)
   const [toast, setToast] = useState(null); // { message: string, type: 'success' | 'error' }
 
   const [stats, setStats] = useState({
@@ -32,7 +34,7 @@ export default function App() {
     setToast({ message, type });
     setTimeout(() => {
       setToast(null);
-    }, 4000);
+    }, 3000); // Pops in middle for 3 seconds
   };
 
   const fetchStats = async () => {
@@ -62,7 +64,7 @@ export default function App() {
 
   const handleGenerateDraft = async () => {
     if (!recipient || !prompt) {
-      showToast('Please fill in both recipient email and prompt!', 'error');
+      showToast('Please fill in recipient email and prompt!', 'error');
       return;
     }
 
@@ -137,476 +139,323 @@ export default function App() {
     }
   };
 
+  const copyToClipboard = () => {
+    if (!body) return;
+    navigator.clipboard.writeText(`Subject: ${subject}\n\n${body}`);
+    showToast('Copied draft to clipboard!', 'success');
+  };
+
   return (
-    <div style={styles.container}>
+    <div className="min-h-screen bg-[#090B0F] text-[#F5F2EA] flex flex-col font-sans selection:bg-[#D6A967]/20 selection:text-[#F0C98A] relative">
       <style>{`
-        * {
-          box-sizing: border-box;
+        input:focus, textarea:focus {
+          outline: none !important;
+          border-color: #D6A967 !important;
+          box-shadow: 0 0 0 1px #D6A967 !important;
         }
-        html, body {
-          margin: 0;
-          padding: 0;
-          width: 100%;
-          min-height: 100vh;
-          overflow-x: hidden;
-          background-color: #FAF7F2;
+        @keyframes popIn {
+          0% { transform: translate(-50%, -40%) scale(0.9); opacity: 0; }
+          100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
         }
-        ::-webkit-scrollbar {
-          width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-          background: #FAF7F2;
-        }
-        ::-webkit-scrollbar-thumb {
-          background: #E2D9CF;
-          border-radius: 4px;
-        }
-        @keyframes pulseGlow {
-          0% { transform: scale(1) translate(0px, 0px); opacity: 0.4; }
-          50% { transform: scale(1.15) translate(30px, -20px); opacity: 0.6; }
-          100% { transform: scale(1) translate(0px, 0px); opacity: 0.4; }
-        }
-        @keyframes floatGlow {
-          0% { transform: scale(1) translate(0px, 0px); opacity: 0.3; }
-          50% { transform: scale(1.2) translate(-25px, 25px); opacity: 0.5; }
-          100% { transform: scale(1) translate(0px, 0px); opacity: 0.3; }
-        }
-        @keyframes slideIn {
-          from { transform: translateY(-20px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
+        .pop-alert {
+          animation: popIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
       `}</style>
 
-      {/* Ambient Animated Glows */}
-      <div style={styles.bgGlow1} />
-      <div style={styles.bgGlow2} />
-
-      {/* Custom Theme Toast Alert */}
+      {/* CENTERED POPUP ALERT */}
       {toast && (
-        <div 
-          style={{
-            ...styles.toast,
-            borderColor: toast.type === 'success' ? '#16A34A' : '#DC2626',
-            color: toast.type === 'success' ? '#15803D' : '#991B1B',
-            backgroundColor: toast.type === 'success' ? '#F0FDF4' : '#FEF2F2',
-          }}
-        >
-          <span>{toast.type === 'success' ? '✓' : '⚠️'}</span>
-          <span>{toast.message}</span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm pointer-events-none px-4">
+          <div className={`pop-alert fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 max-w-sm w-full p-4 rounded-2xl bg-[#141922] border shadow-2xl flex items-center gap-3 border-[#292E36] ${
+            toast.type === 'success' ? 'text-[#35D0A0]' : 'text-red-400'
+          }`}>
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-sm font-bold shrink-0 ${
+              toast.type === 'success' ? 'bg-[#35D0A0]/10 text-[#35D0A0]' : 'bg-red-500/10 text-red-400'
+            }`}>
+              {toast.type === 'success' ? '✓' : '⚠️'}
+            </div>
+            <div className="flex-1">
+              <p className="text-xs font-semibold text-[#F5F2EA]">{toast.message}</p>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Top Header */}
-      <header style={styles.header}>
-        <div style={styles.logoGroup}>
-          <img 
-            src="/logo.png" 
-            alt="MailFreeli Logo" 
-            style={styles.logoImg} 
-            onError={(e) => { e.target.style.display = 'none'; }} 
-          />
-          <div>
-            <h1 style={styles.title}>MailFreeli</h1>
-            <p style={styles.subTitle}>AI-Powered Email Dispatch</p>
+      {/* HEADER */}
+      <header className="h-16 border-b border-[#292E36] bg-[#10141B]/90 backdrop-blur-md sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#D6A967] to-[#B88A48] flex items-center justify-center text-[#090B0F] font-bold text-lg shadow-sm">
+              M
+            </div>
+            <div className="flex flex-col">
+              <span className="font-bold text-sm sm:text-base tracking-tight text-[#F5F2EA] flex items-center gap-2">
+                MailFreeli
+                <span className="text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-[#D6A967]/10 text-[#D6A967] border border-[#D6A967]/20 hidden sm:inline-block">Enterprise</span>
+              </span>
+              <span className="text-[11px] sm:text-xs text-[#9CA3AF]">AI-Powered Email Dispatch</span>
+            </div>
           </div>
+
+          {/* Desktop User Info */}
+          <div className="hidden sm:flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-[#141922] border border-[#292E36] flex items-center justify-center text-xs font-semibold text-[#D6A967]">
+                KB
+              </div>
+              <span className="text-sm font-medium text-[#F5F2EA]">Hello, Bajaj</span>
+            </div>
+          </div>
+
+          {/* Mobile Hamburger Button */}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="sm:hidden p-2 text-[#9CA3AF] hover:text-white"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={mobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
+            </svg>
+          </button>
         </div>
+
+        {/* Mobile Dropdown Drawer */}
+        {mobileMenuOpen && (
+          <div className="sm:hidden bg-[#10141B] border-b border-[#292E36] p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-[#141922] border border-[#292E36] flex items-center justify-center text-xs font-semibold text-[#D6A967]">
+                KB
+              </div>
+              <span className="text-sm font-medium text-[#F5F2EA]">Hello, Bajaj</span>
+            </div>
+            <span className="text-[10px] font-medium uppercase px-2 py-0.5 rounded-full bg-[#D6A967]/10 text-[#D6A967] border border-[#D6A967]/20">Enterprise</span>
+          </div>
+        )}
       </header>
 
-      {/* Main Grid Cockpit */}
-      <div style={styles.mainGrid}>
-        {/* Left Form: AI Dispatch Cockpit */}
-        <div style={styles.card}>
-          <h2 style={styles.cardTitle}>AI Dispatch Cockpit</h2>
-          <p style={styles.cardSub}>Compose your email with AI assistance</p>
-
-          <label style={styles.label}>FROM (SENDER EMAIL)</label>
-          <input
-            type="email"
-            placeholder="sender@domain.com"
-            value={sender}
-            onChange={(e) => setSender(e.target.value)}
-            style={styles.input}
-          />
-
-          <label style={styles.label}>TO (RECIPIENT EMAIL)</label>
-          <input
-            type="email"
-            placeholder="recipient@domain.com"
-            value={recipient}
-            onChange={(e) => setRecipient(e.target.value)}
-            style={styles.input}
-          />
-
-          <label style={styles.label}>MEETING / CALENDAR LINK (OPTIONAL)</label>
-          <input
-            type="text"
-            placeholder="Calendar or Google Meet URL"
-            value={meetingLink}
-            onChange={(e) => handleLinkChange(e.target.value)}
-            style={styles.input}
-          />
-
-          <label style={styles.label}>AI CONTEXT / PROMPT</label>
-          <textarea
-            rows="3"
-            placeholder="Enter AI prompt here..."
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            style={styles.textarea}
-          />
-
-          <div style={styles.suggestionsGroup}>
-            <span style={styles.labelSmall}>QUICK SUGGESTIONS</span>
-            <div style={styles.btnGroup}>
-              <button type="button" onClick={() => handleQuickSuggestion('Draft a follow-up email after meeting.')} style={styles.chipBtn}>
-                Follow-up email
-              </button>
-              <button type="button" onClick={() => handleQuickSuggestion('Request a 15-minute quick alignment meeting.')} style={styles.chipBtn}>
-                Meeting request
-              </button>
-              <button type="button" onClick={() => handleQuickSuggestion('Provide a quick weekly project progress update.')} style={styles.chipBtn}>
-                Project update
-              </button>
-              <button type="button" onClick={() => handleQuickSuggestion('Introduction email to new client.')} style={styles.chipBtn}>
-                Introduction
-              </button>
-            </div>
-          </div>
-
-          <button onClick={handleGenerateDraft} disabled={generating} style={styles.generateBtn}>
-            <div style={styles.btnContent}>
-              <span>✨</span>
+      {/* MAIN CONTENT AREA */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
+        
+        {/* RESPONSIVE 2-COLUMN GRID */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          {/* Left Card: AI Cockpit */}
+          <section className="bg-[#141922] border border-[#292E36] rounded-[16px] p-4 sm:p-6 shadow-xl flex flex-col justify-between">
+            <div className="space-y-5 sm:space-y-6">
               <div>
-                <div style={styles.btnTitle}>{generating ? 'Generating AI Draft...' : 'Generate AI Draft'}</div>
-                <div style={styles.btnSub}>AI will create a personalized email draft</div>
+                <h2 className="text-base sm:text-lg font-bold text-[#F5F2EA]">AI Dispatch Cockpit</h2>
+                <p className="text-xs text-[#9CA3AF] mt-0.5">Compose your email with AI assistance</p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-[#9CA3AF] uppercase tracking-wider mb-1.5">FROM (SENDER EMAIL)</label>
+                  <input
+                    type="email"
+                    placeholder="sender@domain.com"
+                    value={sender}
+                    onChange={(e) => setSender(e.target.value)}
+                    className="w-full bg-[#10141B] border border-[#292E36] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[#F5F2EA] transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-[#9CA3AF] uppercase tracking-wider mb-1.5">TO (RECIPIENT EMAIL)</label>
+                  <input
+                    type="email"
+                    placeholder="recipient@domain.com"
+                    value={recipient}
+                    onChange={(e) => setRecipient(e.target.value)}
+                    className="w-full bg-[#10141B] border border-[#292E36] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[#F5F2EA] placeholder-[#9CA3AF]/50 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-[#9CA3AF] uppercase tracking-wider mb-1.5">
+                    MEETING / CALENDAR LINK <span className="text-[#9CA3AF]/50 text-[10px] font-normal lowercase">(optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Calendar or Google Meet URL"
+                    value={meetingLink}
+                    onChange={(e) => handleLinkChange(e.target.value)}
+                    className="w-full bg-[#10141B] border border-[#292E36] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[#F5F2EA] placeholder-[#9CA3AF]/50 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-[#9CA3AF] uppercase tracking-wider mb-1.5">AI CONTEXT / PROMPT</label>
+                  <textarea
+                    rows={3}
+                    placeholder="Enter AI prompt here..."
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    className="w-full bg-[#10141B] border border-[#292E36] rounded-xl p-3.5 text-xs sm:text-sm text-[#F5F2EA] placeholder-[#9CA3AF]/50 transition-all resize-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-[#9CA3AF] uppercase tracking-wider mb-2">QUICK SUGGESTIONS</label>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { label: 'Follow-up email', prompt: 'Draft a follow-up email after meeting.' },
+                      { label: 'Meeting request', prompt: 'Request a 15-minute quick alignment meeting.' },
+                      { label: 'Project update', prompt: 'Provide a quick weekly project progress update.' },
+                      { label: 'Introduction', prompt: 'Introduction email to new client.' }
+                    ].map((item, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => handleQuickSuggestion(item.prompt)}
+                        className="px-2.5 py-1.5 rounded-full bg-[#10141B] border border-[#292E36] text-[11px] sm:text-xs font-medium text-[#F5F2EA] hover:border-[#D6A967]/40 hover:text-[#D6A967] transition-all"
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
-          </button>
-        </div>
 
-        {/* Right Panel: Editable Draft & Preview */}
-        <div style={styles.card}>
-          <div style={styles.previewHeader}>
-            <div>
-              <h2 style={styles.cardTitle}>Editable Draft & Preview</h2>
-              <p style={styles.cardSub}>Review and edit your AI-generated email</p>
+            <div className="pt-5 mt-5 border-t border-[#292E36]/50">
+              <button
+                type="button"
+                onClick={handleGenerateDraft}
+                disabled={generating}
+                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#D6A967] to-[#F0C98A] text-[#090B0F] font-semibold text-xs sm:text-sm hover:opacity-95 transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                <span>✨</span>
+                {generating ? 'Generating AI Draft...' : 'Generate AI Draft'}
+              </button>
             </div>
-          </div>
+          </section>
 
-          <div style={styles.subjectRow}>
-            <label style={styles.label}>SUBJECT</label>
-            <span style={styles.charCount}>{subject.length}/120</span>
-          </div>
-          <input
-            type="text"
-            placeholder="Email Subject"
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            style={styles.input}
-          />
-
-          <label style={styles.label}>EMAIL PREVIEW</label>
-          <div style={styles.previewContainer}>
-            <div style={styles.previewMetaBox}>
-              <div><strong>To:</strong> {recipient || 'recipient@domain.com'}</div>
-              <div><strong>From:</strong> {sender || 'sender@domain.com'}</div>
-              <div><strong>Subject:</strong> {subject || 'Email Subject'}</div>
-            </div>
-            <textarea
-              placeholder="Your AI-generated email body will appear here..."
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              style={styles.previewBodyTextarea}
-            />
-          </div>
-
-          <button
-            onClick={handleDispatchEmail}
-            disabled={dispatching || !body}
-            style={{
-              ...styles.dispatchBtn,
-              opacity: !body ? 0.6 : 1,
-            }}
-          >
-            <div style={styles.btnContent}>
-              <span>🚀</span>
+          {/* Right Card: Preview & Dispatch */}
+          <section className="bg-[#141922] border border-[#292E36] rounded-[16px] p-4 sm:p-6 shadow-xl flex flex-col justify-between">
+            <div className="space-y-5 sm:space-y-6">
               <div>
-                <div style={styles.btnTitle}>{dispatching ? 'Sending Email...' : 'Send Email via SMTP'}</div>
-                <div style={styles.btnSub}>Email will be sent securely</div>
+                <h2 className="text-base sm:text-lg font-bold text-[#F5F2EA]">Editable Draft & Preview</h2>
+                <p className="text-xs text-[#9CA3AF] mt-0.5">Review and edit your AI-generated email</p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <label className="text-xs font-medium text-[#9CA3AF] uppercase tracking-wider">SUBJECT</label>
+                    <span className="text-[11px] text-[#9CA3AF]/60">{subject.length}/120</span>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Email Subject"
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    className="w-full bg-[#10141B] border border-[#292E36] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[#F5F2EA] transition-all"
+                  />
+                </div>
+
+                <div className="relative bg-[#10141B] border border-[#292E36] rounded-xl p-4 sm:p-5 min-h-[220px] sm:min-h-[260px] flex flex-col">
+                  <button
+                    type="button"
+                    onClick={copyToClipboard}
+                    title="Copy to clipboard"
+                    className="absolute top-3 right-3 p-1.5 sm:p-2 text-[#9CA3AF] hover:text-[#D6A967] rounded-lg hover:bg-[#141922] transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                  </button>
+
+                  <div className="border-b border-[#292E36] pb-2.5 mb-3 space-y-1 text-[11px] sm:text-xs text-[#9CA3AF]">
+                    <p className="truncate"><span className="text-[#9CA3AF]/50">To:</span> {recipient || 'recipient@domain.com'}</p>
+                    <p className="truncate"><span className="text-[#9CA3AF]/50">From:</span> {sender || 'sender@domain.com'}</p>
+                  </div>
+
+                  <textarea
+                    placeholder="Your AI-generated email body will appear here..."
+                    value={body}
+                    onChange={(e) => setBody(e.target.value)}
+                    className="w-full bg-transparent border-none text-xs sm:text-sm text-[#F5F2EA]/90 leading-relaxed outline-none resize-none flex-1 font-sans"
+                  />
+                </div>
               </div>
             </div>
-          </button>
 
-          <div style={styles.statusIndicator}>
-            <span style={styles.greenCheck}>✓</span> {isDispatched ? 'Dispatched via SMTP' : 'Ready to generate'}
-          </div>
-        </div>
-      </div>
+            <div className="pt-5 mt-5 border-t border-[#292E36]/50 space-y-3">
+              <button
+                type="button"
+                onClick={handleDispatchEmail}
+                disabled={dispatching || !body}
+                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#D6A967] to-[#F0C98A] text-[#090B0F] font-semibold text-xs sm:text-sm hover:opacity-95 transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                <span>🚀</span>
+                {dispatching ? 'Sending Email...' : 'Send Email via SMTP'}
+              </button>
 
-      {/* Bottom Metrics Cards */}
-      <div style={styles.metricsRow}>
-        <div style={styles.metricCard}>
-          <div>
-            <div style={styles.metricHeader}>
-              <span style={styles.metricDotWarm}></span>
-              <span style={styles.metricLabel}>AI Success Rate</span>
+              <div className="flex items-center justify-center gap-1.5 text-xs text-[#35D0A0] font-medium">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                {isDispatched ? 'Dispatched via SMTP' : 'Ready to generate'}
+              </div>
             </div>
-            <div style={styles.metricVal}>{stats.completionRate}</div>
-            <div style={styles.metricSub}>{stats.totalLogs} total executions</div>
-          </div>
-          <div style={styles.metricPillWarm}>LIVE</div>
+          </section>
+
         </div>
 
-        <div style={styles.metricCard}>
-          <div>
-            <div style={styles.metricHeader}>
-              <span style={styles.metricDotWarm}></span>
-              <span style={styles.metricLabel}>SMTP Queue</span>
+        {/* RESPONSIVE METRICS GRID (1 COL ON MOBILE, 2 ON TABLET, 4 ON DESKTOP) */}
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-[#141922] border border-[#292E36] rounded-[16px] p-4 sm:p-5 flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider">AI Success Rate</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#35D0A0]/10 text-[#35D0A0] border border-[#35D0A0]/20">LIVE</span>
             </div>
-            <div style={styles.metricVal}>{stats.activeQueue}</div>
-            <div style={styles.metricSub}>0 Backlog</div>
+            <div className="mt-3 sm:mt-4 flex items-end justify-between">
+              <div className="text-xl sm:text-2xl font-bold text-[#F5F2EA]">{stats.completionRate}</div>
+              <span className="text-[10px] text-[#9CA3AF]">{stats.totalLogs} logs</span>
+            </div>
           </div>
-          <div style={styles.metricPillWarm}>READY</div>
-        </div>
 
-        <div style={styles.metricCard}>
-          <div>
-            <div style={styles.metricHeader}>
-              <span style={styles.metricDotWarm}></span>
-              <span style={styles.metricLabel}>Avg Stream Velocity</span>
+          <div className="bg-[#141922] border border-[#292E36] rounded-[16px] p-4 sm:p-5 flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider">SMTP Queue</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#D6A967]/10 text-[#D6A967] border border-[#D6A967]/20">READY</span>
             </div>
-            <div style={styles.metricVal}>{stats.velocity}</div>
-            <div style={styles.metricSub}>Response time</div>
+            <div className="mt-3 sm:mt-4 flex items-end justify-between">
+              <div className="text-xl sm:text-2xl font-bold text-[#F5F2EA]">{stats.activeQueue}</div>
+              <span className="text-[10px] text-[#9CA3AF]">0 Backlog</span>
+            </div>
           </div>
-          <div style={styles.metricPillWarm}>FAST</div>
-        </div>
 
-        <div style={styles.metricCard}>
-          <div>
-            <div style={styles.metricHeader}>
-              <span style={styles.metricLabel}>Total Mails Sent</span>
+          <div className="bg-[#141922] border border-[#292E36] rounded-[16px] p-4 sm:p-5 flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider">Avg Stream Velocity</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#8B7CF6]/10 text-[#8B7CF6] border border-[#8B7CF6]/20">FAST</span>
             </div>
-            <div style={styles.metricVal}>{stats.sentCount || stats.totalLogs}</div>
-            <div style={styles.metricSub}>Live DB records</div>
+            <div className="mt-3 sm:mt-4 flex items-end justify-between">
+              <div className="text-xl sm:text-2xl font-bold text-[#F5F2EA]">{stats.velocity}</div>
+              <span className="text-[10px] text-[#9CA3AF]">Response</span>
+            </div>
           </div>
-          <div style={styles.metricPillWarm}>SYNCED</div>
+
+          <div className="bg-[#141922] border border-[#292E36] rounded-[16px] p-4 sm:p-5 flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider">Total Mails Sent</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#35D0A0]/10 text-[#35D0A0] border border-[#35D0A0]/20">SYNCED</span>
+            </div>
+            <div className="mt-3 sm:mt-4 flex items-end justify-between">
+              <div className="text-xl sm:text-2xl font-bold text-[#F5F2EA]">{stats.sentCount || stats.totalLogs}</div>
+              <span className="text-[10px] text-[#9CA3AF]">Live DB</span>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      {/* FOOTER */}
+      <footer className="mt-auto border-t border-[#292E36] bg-[#10141B] py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] sm:text-xs text-[#9CA3AF] text-center sm:text-left">
+          <div>
+            <span className="text-[#F5F2EA] font-medium">© 2025 MailFreeli</span> • Built for smarter communication • Powered by AI
+          </div>
+          <div className="flex items-center gap-2 text-[#35D0A0]">
+            <span className="w-2 h-2 rounded-full bg-[#35D0A0]"></span> System Online
+          </div>
         </div>
-      </div>
+      </footer>
     </div>
   );
 }
-
-const styles = {
-  container: {
-    backgroundColor: '#FAF7F2',
-    color: '#2D2825',
-    minHeight: '100vh',
-    width: '100%',
-    padding: '28px 40px',
-    position: 'relative',
-    overflow: 'hidden',
-    fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-  },
-  toast: {
-    position: 'fixed',
-    top: '24px',
-    right: '24px',
-    zIndex: 9999,
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    padding: '12px 20px',
-    borderRadius: '12px',
-    border: '1px solid',
-    boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
-    fontSize: '13px',
-    fontWeight: '600',
-    animation: 'slideIn 0.3s ease-out',
-  },
-  bgGlow1: {
-    position: 'absolute',
-    top: '-100px',
-    left: '-100px',
-    width: '450px',
-    height: '450px',
-    borderRadius: '50%',
-    background: 'radial-gradient(circle, rgba(230, 180, 130, 0.3) 0%, rgba(250, 247, 242, 0) 70%)',
-    animation: 'pulseGlow 10s infinite ease-in-out',
-    pointerEvents: 'none',
-    zIndex: 0,
-  },
-  bgGlow2: {
-    position: 'absolute',
-    bottom: '-80px',
-    right: '-80px',
-    width: '500px',
-    height: '500px',
-    borderRadius: '50%',
-    background: 'radial-gradient(circle, rgba(215, 160, 110, 0.25) 0%, rgba(250, 247, 242, 0) 70%)',
-    animation: 'floatGlow 12s infinite ease-in-out',
-    pointerEvents: 'none',
-    zIndex: 0,
-  },
-  header: {
-    display: 'flex',
-    alignItems: 'center',
-    marginBottom: '28px',
-    position: 'relative',
-    zIndex: 1,
-  },
-  logoGroup: { display: 'flex', alignItems: 'center', gap: '14px' },
-  logoImg: { width: '42px', height: '42px', borderRadius: '12px', objectFit: 'cover' },
-  title: { fontSize: '24px', fontWeight: '800', margin: 0, color: '#1C1917', letterSpacing: '-0.5px' },
-  subTitle: { margin: '2px 0 0 0', fontSize: '13px', color: '#78716C', fontWeight: '500' },
-  mainGrid: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '24px',
-    marginBottom: '28px',
-    position: 'relative',
-    zIndex: 1,
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    border: '1px solid #E7E0D6',
-    borderRadius: '16px',
-    padding: '24px',
-    display: 'flex',
-    flexDirection: 'column',
-    boxShadow: '0 8px 30px rgba(180, 160, 140, 0.08)',
-  },
-  cardTitle: { fontSize: '17px', margin: '0 0 4px 0', fontWeight: '700', color: '#1C1917' },
-  cardSub: { color: '#78716C', fontSize: '12px', margin: '0 0 18px 0' },
-  label: { fontSize: '11px', color: '#57534E', fontWeight: '700', letterSpacing: '0.5px', marginBottom: '6px', display: 'block' },
-  labelSmall: { fontSize: '11px', color: '#57534E', fontWeight: '700', letterSpacing: '0.5px', marginBottom: '10px', display: 'block' },
-  input: {
-    backgroundColor: '#F5F0EB',
-    border: '1px solid #E2D9CF',
-    borderRadius: '10px',
-    padding: '11px 14px',
-    color: '#1C1917',
-    fontSize: '13px',
-    marginBottom: '16px',
-    outline: 'none',
-  },
-  textarea: {
-    backgroundColor: '#F5F0EB',
-    border: '1px solid #E2D9CF',
-    borderRadius: '10px',
-    padding: '11px 14px',
-    color: '#1C1917',
-    fontSize: '13px',
-    marginBottom: '16px',
-    outline: 'none',
-    resize: 'none',
-  },
-  suggestionsGroup: { marginBottom: '20px' },
-  btnGroup: { display: 'flex', gap: '10px', flexWrap: 'wrap' },
-  chipBtn: {
-    backgroundColor: '#F0E8DF',
-    border: '1px solid #DFD5C8',
-    color: '#44403C',
-    padding: '7px 14px',
-    borderRadius: '9px',
-    fontSize: '12px',
-    fontWeight: '500',
-    cursor: 'pointer',
-  },
-  generateBtn: {
-    backgroundColor: '#C87D55',
-    border: 'none',
-    borderRadius: '12px',
-    padding: '14px',
-    cursor: 'pointer',
-    color: '#FFFFFF',
-    marginTop: 'auto',
-    boxShadow: '0 6px 20px rgba(200, 125, 85, 0.25)',
-  },
-  dispatchBtn: {
-    backgroundColor: '#C87D55',
-    border: 'none',
-    borderRadius: '12px',
-    padding: '14px',
-    cursor: 'pointer',
-    color: '#FFFFFF',
-    marginTop: '18px',
-    boxShadow: '0 6px 20px rgba(200, 125, 85, 0.25)',
-  },
-  btnContent: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' },
-  btnTitle: { fontSize: '14px', fontWeight: '700', lineHeight: '1.2' },
-  btnSub: { fontSize: '11px', opacity: 0.9 },
-  previewHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' },
-  subjectRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  charCount: { fontSize: '11px', color: '#A8A29E' },
-  previewContainer: {
-    backgroundColor: '#F6F1EA',
-    border: '1px solid #E5DBD0',
-    borderRadius: '10px',
-    padding: '14px',
-    flexGrow: 1,
-    display: 'flex',
-    flexDirection: 'column',
-  },
-  previewMetaBox: {
-    borderBottom: '1px solid #E2D7CB',
-    paddingBottom: '10px',
-    marginBottom: '14px',
-    fontSize: '12px',
-    color: '#57534E',
-    lineHeight: '1.6',
-  },
-  previewBodyTextarea: {
-    backgroundColor: 'transparent',
-    border: 'none',
-    color: '#2D2825',
-    fontSize: '13px',
-    lineHeight: '1.6',
-    outline: 'none',
-    resize: 'none',
-    width: '100%',
-    flexGrow: 1,
-    fontFamily: 'inherit',
-  },
-  statusIndicator: {
-    display: 'flex',
-    alignItems: 'center',
-    fontSize: '12px',
-    color: '#16A34A',
-    marginTop: '14px',
-    fontWeight: '600',
-  },
-  greenCheck: { marginRight: '6px' },
-  metricsRow: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(4, 1fr)',
-    gap: '24px',
-    position: 'relative',
-    zIndex: 1,
-  },
-  metricCard: {
-    backgroundColor: '#FFFFFF',
-    border: '1px solid #E7E0D6',
-    borderTop: '3px solid #C87D55',
-    borderRadius: '14px',
-    padding: '20px 24px',
-    display: 'flex',
-    justify: 'space-between',
-    alignItems: 'flex-start',
-    boxShadow: '0 6px 25px rgba(180, 160, 140, 0.08)',
-  },
-  metricHeader: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' },
-  metricLabel: { fontSize: '12px', color: '#78716C', fontWeight: '600', letterSpacing: '0.3px' },
-  metricVal: { fontSize: '26px', fontWeight: '800', color: '#1C1917', margin: '2px 0 6px 0' },
-  metricSub: { fontSize: '11px', color: '#A8A29E' },
-  metricDotWarm: { width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#C87D55', boxShadow: '0 0 8px rgba(200, 125, 85, 0.6)' },
-  metricPillWarm: { 
-    fontSize: '10px', 
-    fontWeight: '800', 
-    color: '#C87D55', 
-    backgroundColor: '#FBF0E9', 
-    padding: '5px 12px', 
-    borderRadius: '12px', 
-    border: '1px solid #F3D9C9',
-    marginLeft: '12px'
-  },
-};
