@@ -4,14 +4,9 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import nodemailer from 'nodemailer';
 import Groq from 'groq-sdk';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import Email from './models/Email.js';
 
 dotenv.config();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(cors());
@@ -223,13 +218,6 @@ app.post('/api/dispatch-email', async (req, res) => {
 
     res.status(500).json({ error: error.message || 'Failed to dispatch email.' });
   }
-});
-
-// Serve static frontend build assets from the client build output
-app.use(express.static(path.join(__dirname, '../client/dist')));
-
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
 });
 
 const PORT = process.env.PORT || 5000;
