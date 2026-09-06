@@ -8,10 +8,6 @@ export default function App() {
   const [prompt, setPrompt] = useState('');
   const [meetingLink, setMeetingLink] = useState('');
 
-  // Mobile Menu Drawer State
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  // Preview States
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
   const [isDispatched, setIsDispatched] = useState(false);
@@ -19,8 +15,8 @@ export default function App() {
   const [generating, setGenerating] = useState(false);
   const [dispatching, setDispatching] = useState(false);
 
-  // Centered Toast Alert State (Auto-dismisses in 3 seconds)
-  const [toast, setToast] = useState(null); // { message: string, type: 'success' | 'error' }
+  // Centered Alert State (Auto-dismisses in 3s)
+  const [toast, setToast] = useState(null);
 
   const [stats, setStats] = useState({
     completionRate: '100.0%',
@@ -34,7 +30,7 @@ export default function App() {
     setToast({ message, type });
     setTimeout(() => {
       setToast(null);
-    }, 3000); // Pops in middle for 3 seconds
+    }, 3000);
   };
 
   const fetchStats = async () => {
@@ -54,13 +50,10 @@ export default function App() {
     const interval = setInterval(() => {
       fetchStats();
     }, 3000);
-
     return () => clearInterval(interval);
   }, []);
 
-  const handleQuickSuggestion = (text) => {
-    setPrompt(text);
-  };
+  const handleQuickSuggestion = (text) => setPrompt(text);
 
   const handleGenerateDraft = async () => {
     if (!recipient || !prompt) {
@@ -89,7 +82,7 @@ export default function App() {
         showToast(`Error: ${data.error}`, 'error');
       }
     } catch (error) {
-      showToast('Failed to generate draft. Check server console.', 'error');
+      showToast('Failed to generate draft.', 'error');
     } finally {
       setGenerating(false);
     }
@@ -132,13 +125,6 @@ export default function App() {
     }
   };
 
-  const handleLinkChange = (newLink) => {
-    setMeetingLink(newLink);
-    if (body.includes('<YOUR_CALENDAR_LINK_HERE>') && newLink.trim() !== '') {
-      setBody(body.replace('<YOUR_CALENDAR_LINK_HERE>', newLink));
-    }
-  };
-
   const copyToClipboard = () => {
     if (!body) return;
     navigator.clipboard.writeText(`Subject: ${subject}\n\n${body}`);
@@ -146,316 +132,487 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#090B0F] text-[#F5F2EA] flex flex-col font-sans selection:bg-[#D6A967]/20 selection:text-[#F0C98A] relative">
+    <div style={styles.appContainer}>
       <style>{`
-        input:focus, textarea:focus {
-          outline: none !important;
-          border-color: #D6A967 !important;
-          box-shadow: 0 0 0 1px #D6A967 !important;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: #090B0F; font-family: system-ui, -apple-system, sans-serif; }
+        input:focus, textarea:focus { border-color: #D6A967 !important; outline: none; }
         @keyframes popIn {
-          0% { transform: translate(-50%, -40%) scale(0.9); opacity: 0; }
-          100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-        }
-        .pop-alert {
-          animation: popIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          from { opacity: 0; transform: translate(-50%, -45%) scale(0.92); }
+          to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
         }
       `}</style>
 
       {/* CENTERED POPUP ALERT */}
       {toast && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm pointer-events-none px-4">
-          <div className={`pop-alert fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 max-w-sm w-full p-4 rounded-2xl bg-[#141922] border shadow-2xl flex items-center gap-3 border-[#292E36] ${
-            toast.type === 'success' ? 'text-[#35D0A0]' : 'text-red-400'
-          }`}>
-            <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-sm font-bold shrink-0 ${
-              toast.type === 'success' ? 'bg-[#35D0A0]/10 text-[#35D0A0]' : 'bg-red-500/10 text-red-400'
-            }`}>
+        <div style={styles.alertBackdrop}>
+          <div style={styles.alertCard}>
+            <div style={{
+              ...styles.alertIcon,
+              backgroundColor: toast.type === 'success' ? 'rgba(53, 208, 160, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+              color: toast.type === 'success' ? '#35D0A0' : '#EF4444'
+            }}>
               {toast.type === 'success' ? '✓' : '⚠️'}
             </div>
-            <div className="flex-1">
-              <p className="text-xs font-semibold text-[#F5F2EA]">{toast.message}</p>
+            <div style={{ fontSize: '13px', fontWeight: '600', color: '#F5F2EA' }}>
+              {toast.message}
             </div>
           </div>
         </div>
       )}
 
       {/* HEADER */}
-      <header className="h-16 border-b border-[#292E36] bg-[#10141B]/90 backdrop-blur-md sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#D6A967] to-[#B88A48] flex items-center justify-center text-[#090B0F] font-bold text-lg shadow-sm">
-              M
+      <header style={styles.header}>
+        <div style={styles.logoGroup}>
+          <div style={styles.logoBadge}>M</div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontWeight: '700', fontSize: '16px', color: '#F5F2EA' }}>MailFreeli</span>
+              <span style={styles.enterprisePill}>Enterprise</span>
             </div>
-            <div className="flex flex-col">
-              <span className="font-bold text-sm sm:text-base tracking-tight text-[#F5F2EA] flex items-center gap-2">
-                MailFreeli
-                <span className="text-[10px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-full bg-[#D6A967]/10 text-[#D6A967] border border-[#D6A967]/20 hidden sm:inline-block">Enterprise</span>
-              </span>
-              <span className="text-[11px] sm:text-xs text-[#9CA3AF]">AI-Powered Email Dispatch</span>
-            </div>
+            <div style={{ fontSize: '11px', color: '#9CA3AF' }}>AI-Powered Email Dispatch</div>
           </div>
-
-          {/* Desktop User Info */}
-          <div className="hidden sm:flex items-center gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-[#141922] border border-[#292E36] flex items-center justify-center text-xs font-semibold text-[#D6A967]">
-                KB
-              </div>
-              <span className="text-sm font-medium text-[#F5F2EA]">Hello, Bajaj</span>
-            </div>
-          </div>
-
-          {/* Mobile Hamburger Button */}
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="sm:hidden p-2 text-[#9CA3AF] hover:text-white"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={mobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
-            </svg>
-          </button>
         </div>
 
-        {/* Mobile Dropdown Drawer */}
-        {mobileMenuOpen && (
-          <div className="sm:hidden bg-[#10141B] border-b border-[#292E36] p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-[#141922] border border-[#292E36] flex items-center justify-center text-xs font-semibold text-[#D6A967]">
-                KB
-              </div>
-              <span className="text-sm font-medium text-[#F5F2EA]">Hello, Bajaj</span>
-            </div>
-            <span className="text-[10px] font-medium uppercase px-2 py-0.5 rounded-full bg-[#D6A967]/10 text-[#D6A967] border border-[#D6A967]/20">Enterprise</span>
-          </div>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={styles.avatar}>KB</div>
+          <span style={{ fontSize: '13px', color: '#F5F2EA', fontWeight: '500' }}>Hello, Bajaj</span>
+        </div>
       </header>
 
-      {/* MAIN CONTENT AREA */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
+      {/* MAIN CONTAINER */}
+      <main style={styles.main}>
         
-        {/* RESPONSIVE 2-COLUMN GRID */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* TWO COLUMN GRID */}
+        <div style={styles.gridTwoCol}>
           
-          {/* Left Card: AI Cockpit */}
-          <section className="bg-[#141922] border border-[#292E36] rounded-[16px] p-4 sm:p-6 shadow-xl flex flex-col justify-between">
-            <div className="space-y-5 sm:space-y-6">
-              <div>
-                <h2 className="text-base sm:text-lg font-bold text-[#F5F2EA]">AI Dispatch Cockpit</h2>
-                <p className="text-xs text-[#9CA3AF] mt-0.5">Compose your email with AI assistance</p>
-              </div>
+          {/* LEFT: AI COCKPIT */}
+          <section style={styles.card}>
+            <div>
+              <h2 style={styles.cardTitle}>AI Dispatch Cockpit</h2>
+              <p style={styles.cardSub}>Compose your email with AI assistance</p>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-medium text-[#9CA3AF] uppercase tracking-wider mb-1.5">FROM (SENDER EMAIL)</label>
-                  <input
-                    type="email"
-                    placeholder="sender@domain.com"
-                    value={sender}
-                    onChange={(e) => setSender(e.target.value)}
-                    className="w-full bg-[#10141B] border border-[#292E36] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[#F5F2EA] transition-all"
-                  />
-                </div>
+              <div style={styles.fieldGroup}>
+                <label style={styles.label}>FROM (SENDER EMAIL)</label>
+                <input
+                  type="email"
+                  placeholder="sender@domain.com"
+                  value={sender}
+                  onChange={(e) => setSender(e.target.value)}
+                  style={styles.input}
+                />
 
-                <div>
-                  <label className="block text-xs font-medium text-[#9CA3AF] uppercase tracking-wider mb-1.5">TO (RECIPIENT EMAIL)</label>
-                  <input
-                    type="email"
-                    placeholder="recipient@domain.com"
-                    value={recipient}
-                    onChange={(e) => setRecipient(e.target.value)}
-                    className="w-full bg-[#10141B] border border-[#292E36] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[#F5F2EA] placeholder-[#9CA3AF]/50 transition-all"
-                  />
-                </div>
+                <label style={styles.label}>TO (RECIPIENT EMAIL)</label>
+                <input
+                  type="email"
+                  placeholder="recipient@domain.com"
+                  value={recipient}
+                  onChange={(e) => setRecipient(e.target.value)}
+                  style={styles.input}
+                />
 
-                <div>
-                  <label className="block text-xs font-medium text-[#9CA3AF] uppercase tracking-wider mb-1.5">
-                    MEETING / CALENDAR LINK <span className="text-[#9CA3AF]/50 text-[10px] font-normal lowercase">(optional)</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Calendar or Google Meet URL"
-                    value={meetingLink}
-                    onChange={(e) => handleLinkChange(e.target.value)}
-                    className="w-full bg-[#10141B] border border-[#292E36] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[#F5F2EA] placeholder-[#9CA3AF]/50 transition-all"
-                  />
-                </div>
+                <label style={styles.label}>MEETING / CALENDAR LINK (OPTIONAL)</label>
+                <input
+                  type="text"
+                  placeholder="Calendar or Google Meet URL"
+                  value={meetingLink}
+                  onChange={(e) => setMeetingLink(e.target.value)}
+                  style={styles.input}
+                />
 
-                <div>
-                  <label className="block text-xs font-medium text-[#9CA3AF] uppercase tracking-wider mb-1.5">AI CONTEXT / PROMPT</label>
-                  <textarea
-                    rows={3}
-                    placeholder="Enter AI prompt here..."
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    className="w-full bg-[#10141B] border border-[#292E36] rounded-xl p-3.5 text-xs sm:text-sm text-[#F5F2EA] placeholder-[#9CA3AF]/50 transition-all resize-none"
-                  />
-                </div>
+                <label style={styles.label}>AI CONTEXT / PROMPT</label>
+                <textarea
+                  rows={3}
+                  placeholder="Enter AI prompt here..."
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  style={styles.textarea}
+                />
 
-                <div>
-                  <label className="block text-xs font-medium text-[#9CA3AF] uppercase tracking-wider mb-2">QUICK SUGGESTIONS</label>
-                  <div className="flex flex-wrap gap-2">
-                    {[
-                      { label: 'Follow-up email', prompt: 'Draft a follow-up email after meeting.' },
-                      { label: 'Meeting request', prompt: 'Request a 15-minute quick alignment meeting.' },
-                      { label: 'Project update', prompt: 'Provide a quick weekly project progress update.' },
-                      { label: 'Introduction', prompt: 'Introduction email to new client.' }
-                    ].map((item, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => handleQuickSuggestion(item.prompt)}
-                        className="px-2.5 py-1.5 rounded-full bg-[#10141B] border border-[#292E36] text-[11px] sm:text-xs font-medium text-[#F5F2EA] hover:border-[#D6A967]/40 hover:text-[#D6A967] transition-all"
-                      >
-                        {item.label}
-                      </button>
-                    ))}
-                  </div>
+                <label style={{ ...styles.label, marginBottom: '8px' }}>QUICK SUGGESTIONS</label>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {[
+                    { label: 'Follow-up email', prompt: 'Draft a follow-up email after meeting.' },
+                    { label: 'Meeting request', prompt: 'Request a 15-minute quick alignment meeting.' },
+                    { label: 'Project update', prompt: 'Provide a quick weekly project progress update.' },
+                    { label: 'Introduction', prompt: 'Introduction email to new client.' }
+                  ].map((item, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleQuickSuggestion(item.prompt)}
+                      style={styles.pillBtn}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
 
-            <div className="pt-5 mt-5 border-t border-[#292E36]/50">
-              <button
-                type="button"
-                onClick={handleGenerateDraft}
-                disabled={generating}
-                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#D6A967] to-[#F0C98A] text-[#090B0F] font-semibold text-xs sm:text-sm hover:opacity-95 transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                <span>✨</span>
-                {generating ? 'Generating AI Draft...' : 'Generate AI Draft'}
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={handleGenerateDraft}
+              disabled={generating}
+              style={{ ...styles.primaryBtn, opacity: generating ? 0.6 : 1 }}
+            >
+              ✨ {generating ? 'Generating AI Draft...' : 'Generate AI Draft'}
+            </button>
           </section>
 
-          {/* Right Card: Preview & Dispatch */}
-          <section className="bg-[#141922] border border-[#292E36] rounded-[16px] p-4 sm:p-6 shadow-xl flex flex-col justify-between">
-            <div className="space-y-5 sm:space-y-6">
-              <div>
-                <h2 className="text-base sm:text-lg font-bold text-[#F5F2EA]">Editable Draft & Preview</h2>
-                <p className="text-xs text-[#9CA3AF] mt-0.5">Review and edit your AI-generated email</p>
-              </div>
+          {/* RIGHT: EDITABLE DRAFT & PREVIEW */}
+          <section style={styles.card}>
+            <div>
+              <h2 style={styles.cardTitle}>Editable Draft & Preview</h2>
+              <p style={styles.cardSub}>Review and edit your AI-generated email</p>
 
-              <div className="space-y-4">
-                <div>
-                  <div className="flex justify-between items-center mb-1.5">
-                    <label className="text-xs font-medium text-[#9CA3AF] uppercase tracking-wider">SUBJECT</label>
-                    <span className="text-[11px] text-[#9CA3AF]/60">{subject.length}/120</span>
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Email Subject"
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                    className="w-full bg-[#10141B] border border-[#292E36] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[#F5F2EA] transition-all"
-                  />
+              <div style={styles.fieldGroup}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <label style={styles.label}>SUBJECT</label>
+                  <span style={{ fontSize: '11px', color: '#9CA3AF' }}>{subject.length}/120</span>
                 </div>
+                <input
+                  type="text"
+                  placeholder="Email Subject"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  style={styles.input}
+                />
 
-                <div className="relative bg-[#10141B] border border-[#292E36] rounded-xl p-4 sm:p-5 min-h-[220px] sm:min-h-[260px] flex flex-col">
+                <div style={styles.previewBox}>
                   <button
                     type="button"
                     onClick={copyToClipboard}
-                    title="Copy to clipboard"
-                    className="absolute top-3 right-3 p-1.5 sm:p-2 text-[#9CA3AF] hover:text-[#D6A967] rounded-lg hover:bg-[#141922] transition-colors"
+                    style={styles.copyBtn}
+                    title="Copy Draft"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                    📋
                   </button>
 
-                  <div className="border-b border-[#292E36] pb-2.5 mb-3 space-y-1 text-[11px] sm:text-xs text-[#9CA3AF]">
-                    <p className="truncate"><span className="text-[#9CA3AF]/50">To:</span> {recipient || 'recipient@domain.com'}</p>
-                    <p className="truncate"><span className="text-[#9CA3AF]/50">From:</span> {sender || 'sender@domain.com'}</p>
+                  <div style={styles.previewMeta}>
+                    <div><span style={{ color: '#9CA3AF' }}>To:</span> {recipient || 'recipient@domain.com'}</div>
+                    <div><span style={{ color: '#9CA3AF' }}>From:</span> {sender || 'sender@domain.com'}</div>
                   </div>
 
                   <textarea
                     placeholder="Your AI-generated email body will appear here..."
                     value={body}
                     onChange={(e) => setBody(e.target.value)}
-                    className="w-full bg-transparent border-none text-xs sm:text-sm text-[#F5F2EA]/90 leading-relaxed outline-none resize-none flex-1 font-sans"
+                    style={styles.previewTextarea}
                   />
                 </div>
               </div>
             </div>
 
-            <div className="pt-5 mt-5 border-t border-[#292E36]/50 space-y-3">
+            <div>
               <button
                 type="button"
                 onClick={handleDispatchEmail}
                 disabled={dispatching || !body}
-                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#D6A967] to-[#F0C98A] text-[#090B0F] font-semibold text-xs sm:text-sm hover:opacity-95 transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
+                style={{ ...styles.primaryBtn, opacity: dispatching || !body ? 0.5 : 1 }}
               >
-                <span>🚀</span>
-                {dispatching ? 'Sending Email...' : 'Send Email via SMTP'}
+                🚀 {dispatching ? 'Sending Email...' : 'Send Email via SMTP'}
               </button>
 
-              <div className="flex items-center justify-center gap-1.5 text-xs text-[#35D0A0] font-medium">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                {isDispatched ? 'Dispatched via SMTP' : 'Ready to generate'}
+              <div style={styles.statusIndicator}>
+                <span style={{ color: '#35D0A0', fontWeight: 'bold' }}>✓</span> {isDispatched ? 'Dispatched via SMTP' : 'Ready to generate'}
               </div>
             </div>
           </section>
 
         </div>
 
-        {/* RESPONSIVE METRICS GRID (1 COL ON MOBILE, 2 ON TABLET, 4 ON DESKTOP) */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-[#141922] border border-[#292E36] rounded-[16px] p-4 sm:p-5 flex flex-col justify-between">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider">AI Success Rate</span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#35D0A0]/10 text-[#35D0A0] border border-[#35D0A0]/20">LIVE</span>
+        {/* METRICS ROW */}
+        <section style={styles.gridFourCol}>
+          <div style={styles.kpiCard}>
+            <div style={styles.kpiHeader}>
+              <span style={styles.kpiLabel}>AI SUCCESS RATE</span>
+              <span style={{ ...styles.badge, color: '#35D0A0', borderColor: 'rgba(53, 208, 160, 0.3)' }}>LIVE</span>
             </div>
-            <div className="mt-3 sm:mt-4 flex items-end justify-between">
-              <div className="text-xl sm:text-2xl font-bold text-[#F5F2EA]">{stats.completionRate}</div>
-              <span className="text-[10px] text-[#9CA3AF]">{stats.totalLogs} logs</span>
-            </div>
+            <div style={styles.kpiValue}>{stats.completionRate}</div>
+            <div style={styles.kpiSub}>{stats.totalLogs} logs</div>
           </div>
 
-          <div className="bg-[#141922] border border-[#292E36] rounded-[16px] p-4 sm:p-5 flex flex-col justify-between">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider">SMTP Queue</span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#D6A967]/10 text-[#D6A967] border border-[#D6A967]/20">READY</span>
+          <div style={styles.kpiCard}>
+            <div style={styles.kpiHeader}>
+              <span style={styles.kpiLabel}>SMTP QUEUE</span>
+              <span style={{ ...styles.badge, color: '#D6A967', borderColor: 'rgba(214, 169, 103, 0.3)' }}>READY</span>
             </div>
-            <div className="mt-3 sm:mt-4 flex items-end justify-between">
-              <div className="text-xl sm:text-2xl font-bold text-[#F5F2EA]">{stats.activeQueue}</div>
-              <span className="text-[10px] text-[#9CA3AF]">0 Backlog</span>
-            </div>
+            <div style={styles.kpiValue}>{stats.activeQueue}</div>
+            <div style={styles.kpiSub}>0 Backlog</div>
           </div>
 
-          <div className="bg-[#141922] border border-[#292E36] rounded-[16px] p-4 sm:p-5 flex flex-col justify-between">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider">Avg Stream Velocity</span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#8B7CF6]/10 text-[#8B7CF6] border border-[#8B7CF6]/20">FAST</span>
+          <div style={styles.kpiCard}>
+            <div style={styles.kpiHeader}>
+              <span style={styles.kpiLabel}>AVG VELOCITY</span>
+              <span style={{ ...styles.badge, color: '#8B7CF6', borderColor: 'rgba(139, 124, 246, 0.3)' }}>FAST</span>
             </div>
-            <div className="mt-3 sm:mt-4 flex items-end justify-between">
-              <div className="text-xl sm:text-2xl font-bold text-[#F5F2EA]">{stats.velocity}</div>
-              <span className="text-[10px] text-[#9CA3AF]">Response</span>
-            </div>
+            <div style={styles.kpiValue}>{stats.velocity}</div>
+            <div style={styles.kpiSub}>Response</div>
           </div>
 
-          <div className="bg-[#141922] border border-[#292E36] rounded-[16px] p-4 sm:p-5 flex flex-col justify-between">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider">Total Mails Sent</span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#35D0A0]/10 text-[#35D0A0] border border-[#35D0A0]/20">SYNCED</span>
+          <div style={styles.kpiCard}>
+            <div style={styles.kpiHeader}>
+              <span style={styles.kpiLabel}>TOTAL MAILS SENT</span>
+              <span style={{ ...styles.badge, color: '#35D0A0', borderColor: 'rgba(53, 208, 160, 0.3)' }}>SYNCED</span>
             </div>
-            <div className="mt-3 sm:mt-4 flex items-end justify-between">
-              <div className="text-xl sm:text-2xl font-bold text-[#F5F2EA]">{stats.sentCount || stats.totalLogs}</div>
-              <span className="text-[10px] text-[#9CA3AF]">Live DB</span>
-            </div>
+            <div style={styles.kpiValue}>{stats.sentCount || stats.totalLogs}</div>
+            <div style={styles.kpiSub}>Live DB</div>
           </div>
         </section>
+
       </main>
 
       {/* FOOTER */}
-      <footer className="mt-auto border-t border-[#292E36] bg-[#10141B] py-4">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] sm:text-xs text-[#9CA3AF] text-center sm:text-left">
-          <div>
-            <span className="text-[#F5F2EA] font-medium">© 2025 MailFreeli</span> • Built for smarter communication • Powered by AI
-          </div>
-          <div className="flex items-center gap-2 text-[#35D0A0]">
-            <span className="w-2 h-2 rounded-full bg-[#35D0A0]"></span> System Online
-          </div>
+      <footer style={styles.footer}>
+        <div>
+          <span style={{ color: '#F5F2EA', fontWeight: '500' }}>© 2025 MailFreeli</span> • Built for smarter communication • Powered by AI
+        </div>
+        <div style={{ color: '#35D0A0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#35D0A0', display: 'inline-block' }}></span> System Online
         </div>
       </footer>
     </div>
   );
 }
+
+const styles = {
+  appContainer: {
+    backgroundColor: '#090B0F',
+    color: '#F5F2EA',
+    minHeight: '100vh',
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  alertBackdrop: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    zIndex: 9999,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  alertCard: {
+    position: 'fixed',
+    top: '50%',
+    left: '50%',
+    animation: 'popIn 0.25s ease-out forwards',
+    backgroundColor: '#141922',
+    border: '1px solid #292E36',
+    borderRadius: '16px',
+    padding: '16px 20px',
+    boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    maxWidth: '380px',
+    width: '90%',
+  },
+  alertIcon: {
+    width: '32px',
+    height: '32px',
+    borderRadius: '10px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontWeight: 'bold',
+    fontSize: '14px',
+    flexShrink: 0,
+  },
+  header: {
+    height: '64px',
+    borderBottom: '1px solid #292E36',
+    backgroundColor: '#10141B',
+    padding: '0 24px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    sticky: 'top',
+  },
+  logoGroup: { display: 'flex', alignItems: 'center', gap: '12px' },
+  logoBadge: {
+    width: '36px',
+    height: '36px',
+    borderRadius: '10px',
+    background: 'linear-gradient(135deg, #D6A967, #B88A48)',
+    color: '#090B0F',
+    fontWeight: 'bold',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '18px',
+  },
+  enterprisePill: {
+    fontSize: '10px',
+    fontWeight: '600',
+    color: '#D6A967',
+    backgroundColor: 'rgba(214, 169, 103, 0.1)',
+    border: '1px solid rgba(214, 169, 103, 0.2)',
+    padding: '2px 8px',
+    borderRadius: '12px',
+    textTransform: 'uppercase',
+  },
+  avatar: {
+    width: '32px',
+    height: '32px',
+    borderRadius: '50%',
+    backgroundColor: '#141922',
+    border: '1px solid #292E36',
+    color: '#D6A967',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '12px',
+    fontWeight: 'bold',
+  },
+  main: {
+    maxWidth: '1280px',
+    width: '100%',
+    margin: '0 auto',
+    padding: '32px 24px',
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '32px',
+  },
+  gridTwoCol: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+    gap: '24px',
+  },
+  card: {
+    backgroundColor: '#141922',
+    border: '1px solid #292E36',
+    borderRadius: '16px',
+    padding: '24px',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    minHeight: '520px',
+  },
+  cardTitle: { fontSize: '18px', fontWeight: '700', color: '#F5F2EA' },
+  cardSub: { fontSize: '12px', color: '#9CA3AF', marginTop: '2px', marginBottom: '20px' },
+  fieldGroup: { display: 'flex', flexDirection: 'column', gap: '12px' },
+  label: { fontSize: '11px', fontWeight: '600', color: '#9CA3AF', letterSpacing: '0.5px' },
+  input: {
+    backgroundColor: '#10141B',
+    border: '1px solid #292E36',
+    borderRadius: '10px',
+    padding: '10px 14px',
+    color: '#F5F2EA',
+    fontSize: '13px',
+    width: '100%',
+  },
+  textarea: {
+    backgroundColor: '#10141B',
+    border: '1px solid #292E36',
+    borderRadius: '10px',
+    padding: '12px 14px',
+    color: '#F5F2EA',
+    fontSize: '13px',
+    width: '100%',
+    resize: 'none',
+  },
+  pillBtn: {
+    backgroundColor: '#10141B',
+    border: '1px solid #292E36',
+    borderRadius: '20px',
+    color: '#F5F2EA',
+    padding: '6px 12px',
+    fontSize: '11px',
+    cursor: 'pointer',
+  },
+  primaryBtn: {
+    width: '100%',
+    padding: '12px',
+    borderRadius: '10px',
+    border: 'none',
+    background: 'linear-gradient(90deg, #D6A967, #F0C98A)',
+    color: '#090B0F',
+    fontWeight: '700',
+    fontSize: '13px',
+    cursor: 'pointer',
+    marginTop: '20px',
+  },
+  previewBox: {
+    backgroundColor: '#10141B',
+    border: '1px solid #292E36',
+    borderRadius: '10px',
+    padding: '16px',
+    position: 'relative',
+    minHeight: '220px',
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  copyBtn: {
+    position: 'absolute',
+    top: '12px',
+    right: '12px',
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    fontSize: '14px',
+  },
+  previewMeta: {
+    borderBottom: '1px solid #292E36',
+    paddingBottom: '10px',
+    marginBottom: '10px',
+    fontSize: '12px',
+    lineHeight: '1.6',
+  },
+  previewTextarea: {
+    backgroundColor: 'transparent',
+    border: 'none',
+    color: '#F5F2EA',
+    fontSize: '13px',
+    lineHeight: '1.6',
+    resize: 'none',
+    width: '100%',
+    flex: 1,
+    outline: 'none',
+  },
+  statusIndicator: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '6px',
+    fontSize: '12px',
+    color: '#35D0A0',
+    marginTop: '12px',
+  },
+  gridFourCol: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    gap: '16px',
+  },
+  kpiCard: {
+    backgroundColor: '#141922',
+    border: '1px solid #292E36',
+    borderRadius: '16px',
+    padding: '20px',
+  },
+  kpiHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+  kpiLabel: { fontSize: '11px', color: '#9CA3AF', fontWeight: '600' },
+  badge: {
+    fontSize: '9px',
+    fontWeight: 'bold',
+    border: '1px solid',
+    borderRadius: '10px',
+    padding: '2px 6px',
+  },
+  kpiValue: { fontSize: '24px', fontWeight: '800', margin: '12px 0 4px 0', color: '#F5F2EA' },
+  kpiSub: { fontSize: '11px', color: '#9CA3AF' },
+  footer: {
+    borderTop: '1px solid #292E36',
+    backgroundColor: '#10141B',
+    padding: '16px 24px',
+    display: 'flex',
+    justify: 'space-between',
+    fontSize: '12px',
+    color: '#9CA3AF',
+  },
+};
