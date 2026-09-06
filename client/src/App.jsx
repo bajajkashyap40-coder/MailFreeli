@@ -15,7 +15,7 @@ export default function App() {
   const [generating, setGenerating] = useState(false);
   const [dispatching, setDispatching] = useState(false);
 
-  // Centered Alert State (Auto-dismisses in 3s)
+  // Mid-Top Alert State
   const [toast, setToast] = useState(null);
 
   const [stats, setStats] = useState({
@@ -61,6 +61,7 @@ export default function App() {
       return;
     }
 
+    // Reset previous generated state to allow multiple generations
     setGenerating(true);
     setIsDispatched(false);
 
@@ -74,15 +75,15 @@ export default function App() {
       const data = await response.json();
 
       if (response.ok) {
-        setSubject(data.subject);
-        setBody(data.body);
+        setSubject(data.subject || 'Follow-up from MailFreeli');
+        setBody(data.body || prompt);
         showToast('AI Draft generated successfully!', 'success');
         fetchStats();
       } else {
         showToast(`Error: ${data.error}`, 'error');
       }
     } catch (error) {
-      showToast('Failed to generate draft.', 'error');
+      showToast('Failed to generate draft. Please try again.', 'error');
     } finally {
       setGenerating(false);
     }
@@ -135,48 +136,55 @@ export default function App() {
     <div style={styles.appContainer}>
       <style>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background-color: #090B0F; font-family: system-ui, -apple-system, sans-serif; }
+        body { background-color: #090B0F; font-family: system-ui, -apple-system, sans-serif; overflow-x: hidden; }
         input:focus, textarea:focus { border-color: #D6A967 !important; outline: none; }
-        @keyframes popIn {
-          from { opacity: 0; transform: translate(-50%, -45%) scale(0.92); }
-          to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        
+        /* Dark Champagne Themed Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #10141B; }
+        ::-webkit-scrollbar-thumb { background: #292E36; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #D6A967; }
+
+        @keyframes dropDown {
+          from { opacity: 0; transform: translate(-50%, -20px); }
+          to { opacity: 1; transform: translate(-50%, 0); }
         }
       `}</style>
 
-      {/* CENTERED POPUP ALERT */}
+      {/* MID-TOP POPUP ALERT */}
       {toast && (
-        <div style={styles.alertBackdrop}>
-          <div style={styles.alertCard}>
-            <div style={{
-              ...styles.alertIcon,
-              backgroundColor: toast.type === 'success' ? 'rgba(53, 208, 160, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-              color: toast.type === 'success' ? '#35D0A0' : '#EF4444'
-            }}>
-              {toast.type === 'success' ? '✓' : '⚠️'}
-            </div>
-            <div style={{ fontSize: '13px', fontWeight: '600', color: '#F5F2EA' }}>
-              {toast.message}
-            </div>
+        <div style={styles.midTopAlert}>
+          <div style={{
+            ...styles.alertIcon,
+            backgroundColor: toast.type === 'success' ? 'rgba(53, 208, 160, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+            color: toast.type === 'success' ? '#35D0A0' : '#EF4444'
+          }}>
+            {toast.type === 'success' ? '✓' : '⚠️'}
+          </div>
+          <div style={{ fontSize: '13px', fontWeight: '600', color: '#F5F2EA' }}>
+            {toast.message}
           </div>
         </div>
       )}
 
-      {/* HEADER */}
-      <header style={styles.header}>
-        <div style={styles.logoGroup}>
-          <div style={styles.logoBadge}>M</div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontWeight: '700', fontSize: '16px', color: '#F5F2EA' }}>MailFreeli</span>
-              <span style={styles.enterprisePill}>Enterprise</span>
+      {/* FULL-WIDTH HEADER */}
+      <header style={styles.fullHeader}>
+        <div style={styles.headerInner}>
+          <div style={styles.logoGroup}>
+            <div style={styles.logoBadge}>M</div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontWeight: '700', fontSize: '16px', color: '#F5F2EA' }}>MailFreeli</span>
+                <span style={styles.enterprisePill}>Enterprise</span>
+              </div>
+              <div style={{ fontSize: '11px', color: '#9CA3AF' }}>AI-Powered Email Dispatch</div>
             </div>
-            <div style={{ fontSize: '11px', color: '#9CA3AF' }}>AI-Powered Email Dispatch</div>
           </div>
-        </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={styles.avatar}>KB</div>
-          <span style={{ fontSize: '13px', color: '#F5F2EA', fontWeight: '500' }}>Hello, Bajaj</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={styles.avatar}>U</div>
+            <span style={{ fontSize: '13px', color: '#F5F2EA', fontWeight: '500' }}>Hello, User</span>
+          </div>
         </div>
       </header>
 
@@ -363,13 +371,19 @@ export default function App() {
 
       </main>
 
-      {/* FOOTER */}
-      <footer style={styles.footer}>
-        <div>
-          <span style={{ color: '#F5F2EA', fontWeight: '500' }}>© 2025 MailFreeli</span> • Built for smarter communication • Powered by AI
-        </div>
-        <div style={{ color: '#35D0A0', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#35D0A0', display: 'inline-block' }}></span> System Online
+      {/* FULL-WIDTH FOOTER */}
+      <footer style={styles.fullFooter}>
+        <div style={styles.footerInner}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <span style={{ color: '#F5F2EA', fontWeight: '600' }}>© 2025 MailFreeli</span>
+            <span style={{ color: '#292E36' }}>•</span>
+            <span>Built for smarter communication</span>
+            <span style={{ color: '#292E36' }}>•</span>
+            <span>Powered by AI</span>
+          </div>
+          <div style={{ color: '#35D0A0', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#35D0A0', display: 'inline-block' }}></span> System Online
+          </div>
         </div>
       </footer>
     </div>
@@ -381,57 +395,55 @@ const styles = {
     backgroundColor: '#090B0F',
     color: '#F5F2EA',
     minHeight: '100vh',
+    width: '100vw',
     display: 'flex',
     flexDirection: 'column',
   },
-  alertBackdrop: {
+  midTopAlert: {
     position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    zIndex: 9999,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  alertCard: {
-    position: 'fixed',
-    top: '50%',
+    top: '80px',
     left: '50%',
-    animation: 'popIn 0.25s ease-out forwards',
+    animation: 'dropDown 0.25s ease-out forwards',
     backgroundColor: '#141922',
     border: '1px solid #292E36',
-    borderRadius: '16px',
-    padding: '16px 20px',
-    boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
+    borderRadius: '14px',
+    padding: '12px 18px',
+    boxShadow: '0 12px 30px rgba(0,0,0,0.5)',
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
+    zIndex: 9999,
     maxWidth: '380px',
     width: '90%',
   },
   alertIcon: {
-    width: '32px',
-    height: '32px',
-    borderRadius: '10px',
+    width: '28px',
+    height: '28px',
+    borderRadius: '8px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     fontWeight: 'bold',
-    fontSize: '14px',
+    fontSize: '13px',
     flexShrink: 0,
   },
-  header: {
-    height: '64px',
+  fullHeader: {
+    width: '100%',
     borderBottom: '1px solid #292E36',
     backgroundColor: '#10141B',
+    position: 'sticky',
+    top: 0,
+    zIndex: 100,
+  },
+  headerInner: {
+    maxWidth: '1400px',
+    width: '100%',
+    margin: '0 auto',
     padding: '0 24px',
+    height: '64px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    sticky: 'top',
   },
   logoGroup: { display: 'flex', alignItems: 'center', gap: '12px' },
   logoBadge: {
@@ -470,7 +482,7 @@ const styles = {
     fontWeight: 'bold',
   },
   main: {
-    maxWidth: '1280px',
+    maxWidth: '1400px',
     width: '100%',
     margin: '0 auto',
     padding: '32px 24px',
@@ -606,12 +618,22 @@ const styles = {
   },
   kpiValue: { fontSize: '24px', fontWeight: '800', margin: '12px 0 4px 0', color: '#F5F2EA' },
   kpiSub: { fontSize: '11px', color: '#9CA3AF' },
-  footer: {
+  fullFooter: {
+    width: '100%',
     borderTop: '1px solid #292E36',
     backgroundColor: '#10141B',
+    marginTop: 'auto',
+  },
+  footerInner: {
+    maxWidth: '1400px',
+    width: '100%',
+    margin: '0 auto',
     padding: '16px 24px',
     display: 'flex',
     justify: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: '12px',
     fontSize: '12px',
     color: '#9CA3AF',
   },
