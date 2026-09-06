@@ -1,16 +1,11 @@
 {
   "name": "mailfreeli",
   "version": "1.0.0",
-  "description": "MailFreeli AI Email Application",
-  "main": "backend/server.js",
   "type": "module",
   "scripts": {
     "start": "node backend/server.js",
-    "build": "npm install && npm run build --prefix client"
+    "build": "npm install --prefix client && npm run build --prefix client && cp -r client/dist ./dist"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
