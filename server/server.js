@@ -28,13 +28,13 @@ const groq = new Groq({
   timeout: 10000 
 });
 
-// Helper to get active model dynamically without hitches
+// Helper to safely get active Groq text generation models only
 async function getValidModel() {
   const safeCandidates = [
     'llama-3.3-70b-versatile',
     'llama-3.1-8b-instant',
-    'llama3-8b-8192',
     'llama3-70b-8192',
+    'llama3-8b-8192',
     'mixtral-8x7b-32768',
     'gemma2-9b-it'
   ];
@@ -43,14 +43,17 @@ async function getValidModel() {
     const modelsList = await groq.models.list();
     const available = modelsList.data.map((m) => m.id);
     
-    // Find first supported candidate in account's active models list
+    // 1. Check if any verified text candidate is active
     const matched = safeCandidates.find((model) => available.includes(model));
     if (matched) return matched;
 
-    // Fallback search to ensure audio/speech models like 'orpheus' are ignored
-    const fallbackTextModel = available.find(
-      (id) => id.includes('llama') || id.includes('mixtral') || id.includes('gemma')
-    );
+    // 2. Fallback: Find a text model while explicitly excluding guard/safety/whisper/vision models
+    const fallbackTextModel = available.find((id) => {
+      const lower = id.toLowerCase();
+      const isTextModel = lower.includes('llama') || lower.includes('mixtral') || lower.includes('gemma');
+      const isGuardOrSpecial = lower.includes('guard') || lower.includes('whisper') || lower.includes('vision') || lower.includes('orpheus');
+      return isTextModel && !isGuardOrSpecial;
+    });
 
     return fallbackTextModel || 'llama-3.3-70b-versatile';
   } catch (err) {
@@ -220,7 +223,7 @@ app.post('/api/dispatch-email', async (req, res) => {
   }
 });
 
-// Serve frontend static assets in production
+// Serve static assets in production
 app.use(express.static(path.join(__dirname, '../dist')));
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../dist/index.html'));
