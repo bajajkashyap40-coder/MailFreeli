@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 
+// Railway / Environment Dynamic Base URL
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 export default function App() {
   const [sender, setSender] = useState('');
   const [recipient, setRecipient] = useState('');
@@ -34,7 +37,7 @@ export default function App() {
 
   const fetchStats = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/stats');
+      const res = await fetch(`${API_BASE_URL}/api/stats`);
       if (res.ok) {
         const data = await res.json();
         setStats(data);
@@ -67,7 +70,7 @@ export default function App() {
     setIsDispatched(false);
 
     try {
-      const response = await fetch('http://localhost:5000/api/generate-draft', {
+      const response = await fetch(`${API_BASE_URL}/api/generate-draft`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ recipient, prompt, meetingLink }),
@@ -99,7 +102,7 @@ export default function App() {
     setDispatching(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/dispatch-email', {
+      const response = await fetch(`${API_BASE_URL}/api/dispatch-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -381,7 +384,6 @@ export default function App() {
         <div style={styles.metricCard}>
           <div>
             <div style={styles.metricHeader}>
-              <span style={styles.metricDotWarm}></span>
               <span style={styles.metricLabel}>Total Mails Sent</span>
             </div>
             <div style={styles.metricVal}>{stats.sentCount || stats.totalLogs}</div>

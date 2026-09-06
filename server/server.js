@@ -20,26 +20,27 @@ mongoose.connect(process.env.MONGO_URI)
 // 2. Initialize Groq AI Client
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-// Helper to safely get an active, existing Groq model ID
+// Helper to safely get whichever Groq model is currently ACTIVE on your key
 async function getValidModel() {
   try {
     const modelsList = await groq.models.list();
     const available = modelsList.data.map((m) => m.id);
 
-    // Active Groq production models supporting structured JSON output
+    // List of reliable Groq model IDs ordered by priority
     const candidates = [
+      'llama-3.3-70b-versatile',
       'llama-3.1-8b-instant',
       'llama3-70b-8192',
       'llama3-8b-8192',
       'mixtral-8x7b-32768',
-      'llama-3.3-70b-versatile'
+      'gemma2-9b-it'
     ];
 
     const matched = candidates.find((model) => available.includes(model));
-    return matched || 'llama-3.1-8b-instant';
+    return matched || available[0] || 'llama3-8b-8192';
   } catch (err) {
-    console.warn('Unable to query Groq models list, defaulting to llama-3.1-8b-instant');
-    return 'llama-3.1-8b-instant';
+    console.warn('Unable to query Groq models list, defaulting to llama3-8b-8192:', err.message);
+    return 'llama3-8b-8192';
   }
 }
 
@@ -77,19 +78,20 @@ app.post('/api/generate-draft', async (req, res) => {
 
   try {
     const selectedModel = await getValidModel();
+    console.log(`Using Active Groq Model: ${selectedModel}`);
 
     const linkInstruction = meetingLink 
       ? `Use this exact meeting link in the email: "${meetingLink}".` 
       : 'If a meeting or calendar link is needed, use the exact placeholder tag: "<YOUR_CALENDAR_LINK_HERE>". NEVER invent fake URLs.';
 
-    let completion;
+    let rawContent = '';
+
     try {
-      completion = await groq.chat.completions.create({
+      const completion = await groq.chat.completions.create({
         messages: [
           {
             role: 'system',
-            content: `You are an elite email generator.
-Return ONLY a valid JSON object with two keys: "subject" and "body". Do not wrap in markdown or add extra text.
+            content: `You are an elite email generator. Return ONLY a valid JSON object with two keys: "subject" and "body". Do not wrap in markdown.
 Rules:
 1. Do not invent fake links, URLs, or domains.
 2. ${linkInstruction}`,
@@ -102,27 +104,36 @@ Rules:
         model: selectedModel,
         response_format: { type: 'json_object' },
       });
+      rawContent = completion.choices[0]?.message?.content || '{}';
     } catch (modelErr) {
-      console.warn(`Primary model ${selectedModel} failed. Falling back to llama-3.1-8b-instant.`);
-      completion = await groq.chat.completions.create({
+      console.warn(`Primary model ${selectedModel} JSON request failed. Attempting standard text prompt...`);
+      const fallbackCompletion = await groq.chat.completions.create({
         messages: [
           {
             role: 'system',
-            content: `You are an elite email generator. Return ONLY a valid JSON object with two keys: "subject" and "body".`,
+            content: `You are an email generator. Return ONLY a JSON object with "subject" and "body" keys.`,
           },
           {
             role: 'user',
             content: `Write an email based on this prompt: "${prompt}". Recipient is ${recipient}.`,
           },
         ],
-        model: 'llama-3.1-8b-instant',
-        response_format: { type: 'json_object' },
+        model: selectedModel,
       });
+      rawContent = fallbackCompletion.choices[0]?.message?.content || '{}';
     }
 
-    const aiContent = JSON.parse(completion.choices[0]?.message?.content || '{}');
-    let subject = aiContent.subject || 'Follow-up from MailFreeli';
-    let body = aiContent.body || prompt;
+    let subject = 'Follow-up from MailFreeli';
+    let body = prompt;
+
+    try {
+      const aiContent = JSON.parse(rawContent);
+      subject = aiContent.subject || subject;
+      body = aiContent.body || body;
+    } catch (parseErr) {
+      console.warn('JSON parsing failed, assigning raw output to body.');
+      body = rawContent;
+    }
 
     if (meetingLink && body.includes('<YOUR_CALENDAR_LINK_HERE>')) {
       body = body.replace(/<YOUR_CALENDAR_LINK_HERE>/g, meetingLink);
