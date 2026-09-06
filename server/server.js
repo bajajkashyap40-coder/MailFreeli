@@ -17,16 +17,18 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB connected successfully'))
   .catch((err) => console.error('MongoDB Connection Error:', err));
 
-// 2. Initialize Groq AI Client
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+// 2. Initialize Groq AI Client with explicit timeout
+const groq = new Groq({ 
+  apiKey: process.env.GROQ_API_KEY,
+  timeout: 10000 // 10 seconds timeout for AI generation
+});
 
-// Helper to safely get whichever Groq model is currently ACTIVE on your key
+// Helper to safely get active model
 async function getValidModel() {
   try {
     const modelsList = await groq.models.list();
     const available = modelsList.data.map((m) => m.id);
 
-    // List of reliable Groq model IDs ordered by priority
     const candidates = [
       'llama-3.3-70b-versatile',
       'llama-3.1-8b-instant',
@@ -68,7 +70,7 @@ app.get('/api/stats', async (req, res) => {
   }
 });
 
-// 4. STEP 1: AI Email Draft Generation
+// 4. STEP 1: AI Email Draft Generation with Instant Retry Loop
 app.post('/api/generate-draft', async (req, res) => {
   const { recipient, prompt, meetingLink } = req.body;
 
@@ -76,22 +78,23 @@ app.post('/api/generate-draft', async (req, res) => {
     return res.status(400).json({ error: 'Recipient and prompt are required.' });
   }
 
-  try {
-    const selectedModel = await getValidModel();
-    console.log(`Using Active Groq Model: ${selectedModel}`);
+  const linkInstruction = meetingLink 
+    ? `Use this exact meeting link in the email: "${meetingLink}".` 
+    : 'If a meeting or calendar link is needed, use the exact placeholder tag: "<YOUR_CALENDAR_LINK_HERE>". NEVER invent fake URLs.';
 
-    const linkInstruction = meetingLink 
-      ? `Use this exact meeting link in the email: "${meetingLink}".` 
-      : 'If a meeting or calendar link is needed, use the exact placeholder tag: "<YOUR_CALENDAR_LINK_HERE>". NEVER invent fake URLs.';
+  let rawContent = '';
+  let selectedModel = 'llama3-8b-8192';
 
-    let rawContent = '';
-
+  for (let attempt = 1; attempt <= 2; attempt++) {
     try {
+      selectedModel = await getValidModel();
+      console.log(`[Attempt ${attempt}] Using Active Groq Model: ${selectedModel}`);
+
       const completion = await groq.chat.completions.create({
         messages: [
           {
             role: 'system',
-            content: `You are an elite email generator. Return ONLY a valid JSON object with two keys: "subject" and "body". Do not wrap in markdown.
+            content: `You are an elite email generator. Return ONLY a valid JSON object with two keys: "subject" and "body".
 Rules:
 1. Do not invent fake links, URLs, or domains.
 2. ${linkInstruction}`,
@@ -104,49 +107,36 @@ Rules:
         model: selectedModel,
         response_format: { type: 'json_object' },
       });
+
       rawContent = completion.choices[0]?.message?.content || '{}';
-    } catch (modelErr) {
-      console.warn(`Primary model ${selectedModel} JSON request failed. Attempting standard text prompt...`);
-      const fallbackCompletion = await groq.chat.completions.create({
-        messages: [
-          {
-            role: 'system',
-            content: `You are an email generator. Return ONLY a JSON object with "subject" and "body" keys.`,
-          },
-          {
-            role: 'user',
-            content: `Write an email based on this prompt: "${prompt}". Recipient is ${recipient}.`,
-          },
-        ],
-        model: selectedModel,
-      });
-      rawContent = fallbackCompletion.choices[0]?.message?.content || '{}';
+      if (rawContent && rawContent !== '{}') break;
+    } catch (err) {
+      console.warn(`Generation attempt ${attempt} failed:`, err.message);
+      if (attempt === 2) {
+        return res.status(500).json({ error: 'AI generation timed out. Please click generate again.' });
+      }
     }
-
-    let subject = 'Follow-up from MailFreeli';
-    let body = prompt;
-
-    try {
-      const aiContent = JSON.parse(rawContent);
-      subject = aiContent.subject || subject;
-      body = aiContent.body || body;
-    } catch (parseErr) {
-      console.warn('JSON parsing failed, assigning raw output to body.');
-      body = rawContent;
-    }
-
-    if (meetingLink && body.includes('<YOUR_CALENDAR_LINK_HERE>')) {
-      body = body.replace(/<YOUR_CALENDAR_LINK_HERE>/g, meetingLink);
-    }
-
-    res.status(200).json({ subject, body });
-  } catch (error) {
-    console.error('AI Draft Error:', error);
-    res.status(500).json({ error: error.message || 'Failed to generate AI draft.' });
   }
+
+  let subject = 'Follow-up from MailFreeli';
+  let body = prompt;
+
+  try {
+    const aiContent = JSON.parse(rawContent);
+    subject = aiContent.subject || subject;
+    body = aiContent.body || body;
+  } catch (parseErr) {
+    body = rawContent;
+  }
+
+  if (meetingLink && body.includes('<YOUR_CALENDAR_LINK_HERE>')) {
+    body = body.replace(/<YOUR_CALENDAR_LINK_HERE>/g, meetingLink);
+  }
+
+  res.status(200).json({ subject, body });
 });
 
-// 5. STEP 2: Dispatch Edited Email via Nodemailer & Log to DB
+// 5. STEP 2: Dispatch Edited Email via Nodemailer with Socket Safeguards
 app.post('/api/dispatch-email', async (req, res) => {
   const { sender, recipient, prompt, subject, body } = req.body;
 
@@ -159,10 +149,16 @@ app.post('/api/dispatch-email', async (req, res) => {
   try {
     const transporter = nodemailer.createTransport({
       service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
     });
 
     await transporter.sendMail({
