@@ -225,10 +225,11 @@ app.post('/api/dispatch-email', async (req, res) => {
   }
 });
 
-// Serve static frontend build assets in production
-app.use(express.static(path.join(__dirname, '../dist')));
+// Serve static frontend build assets from the client build output
+app.use(express.static(path.join(__dirname, '../client/dist')));
+
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../dist/index.html'));
+  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
 });
 
 const PORT = process.env.PORT || 5000;
