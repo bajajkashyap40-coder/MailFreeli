@@ -136,7 +136,7 @@ Rules:
   res.status(200).json({ subject, body });
 });
 
-// 5. STEP 2: Dispatch Edited Email via Nodemailer with Fixed SMTP Timeouts
+// 5. STEP 2: Dispatch Edited Email via Nodemailer with Handshake Logging
 app.post('/api/dispatch-email', async (req, res) => {
   const { sender, recipient, prompt, subject, body } = req.body;
 
@@ -156,11 +156,13 @@ app.post('/api/dispatch-email', async (req, res) => {
         pass: process.env.EMAIL_PASS,
       },
       tls: {
-        rejectUnauthorized: false, // Avoid local SSL/TLS handshake rejections
+        rejectUnauthorized: false,
       },
-      connectionTimeout: 20000, // 20s connection timeout
-      greetingTimeout: 20000,   // 20s greeting handshake timeout
-      socketTimeout: 30000,     // 30s socket inactivity timeout
+      logger: true, // Log full SMTP traffic to terminal
+      debug: true,  // Output connection handshake traces
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 10000,
     });
 
     await transporter.sendMail({
@@ -183,7 +185,7 @@ app.post('/api/dispatch-email', async (req, res) => {
 
     res.status(200).json({ message: 'Email dispatched and logged successfully!' });
   } catch (error) {
-    console.error('Dispatch error:', error);
+    console.error('Dispatch error details:', error.message);
     
     try {
       await Email.create({
