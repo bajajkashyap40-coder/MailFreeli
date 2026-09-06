@@ -28,11 +28,13 @@ const groq = new Groq({
   timeout: 10000 
 });
 
-// Helper to safely get active Groq text generation models only
+// Helper to safely fetch active Groq text generation models only
 async function getValidModel() {
   const safeCandidates = [
     'llama-3.3-70b-versatile',
     'llama-3.1-8b-instant',
+    'openai/gpt-oss-120b',
+    'openai/gpt-oss-20b',
     'llama3-70b-8192',
     'llama3-8b-8192',
     'mixtral-8x7b-32768',
@@ -43,22 +45,22 @@ async function getValidModel() {
     const modelsList = await groq.models.list();
     const available = modelsList.data.map((m) => m.id);
     
-    // 1. Check if any verified text candidate is active
+    // 1. Check if any primary text candidate exists in your active account
     const matched = safeCandidates.find((model) => available.includes(model));
     if (matched) return matched;
 
-    // 2. Fallback: Find a text model while explicitly excluding guard/safety/whisper/vision models
+    // 2. Fallback: Find a valid text model while strictly excluding safety, guard, audio, or vision models
     const fallbackTextModel = available.find((id) => {
       const lower = id.toLowerCase();
-      const isTextModel = lower.includes('llama') || lower.includes('mixtral') || lower.includes('gemma');
-      const isGuardOrSpecial = lower.includes('guard') || lower.includes('whisper') || lower.includes('vision') || lower.includes('orpheus');
+      const isTextModel = lower.includes('llama') || lower.includes('mixtral') || lower.includes('gemma') || lower.includes('gpt');
+      const isGuardOrSpecial = lower.includes('guard') || lower.includes('whisper') || lower.includes('vision') || lower.includes('orpheus') || lower.includes('safeguard');
       return isTextModel && !isGuardOrSpecial;
     });
 
-    return fallbackTextModel || 'llama-3.3-70b-versatile';
+    return fallbackTextModel || 'llama-3.1-8b-instant';
   } catch (err) {
-    console.warn('Unable to query Groq models list, defaulting to llama-3.3-70b-versatile:', err.message);
-    return 'llama-3.3-70b-versatile';
+    console.warn('Unable to query Groq models list, defaulting to llama-3.1-8b-instant:', err.message);
+    return 'llama-3.1-8b-instant';
   }
 }
 
@@ -223,7 +225,7 @@ app.post('/api/dispatch-email', async (req, res) => {
   }
 });
 
-// Serve static assets in production
+// Serve static frontend build assets in production
 app.use(express.static(path.join(__dirname, '../dist')));
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../dist/index.html'));
