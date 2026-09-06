@@ -4,9 +4,14 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import nodemailer from 'nodemailer';
 import Groq from 'groq-sdk';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import Email from './models/Email.js';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(cors());
@@ -23,26 +28,27 @@ const groq = new Groq({
   timeout: 10000 
 });
 
-// Helper to safely get active model
+// Helper to strictly return standard text models (prevents terms acceptance errors)
 async function getValidModel() {
+  const safeTextModels = [
+    'llama-3.3-70b-versatile',
+    'llama-3.1-8b-instant',
+    'llama3-70b-8192',
+    'llama3-8b-8192',
+    'mixtral-8x7b-32768',
+    'gemma2-9b-it'
+  ];
+
   try {
     const modelsList = await groq.models.list();
     const available = modelsList.data.map((m) => m.id);
-
-    const candidates = [
-      'llama-3.3-70b-versatile',
-      'llama-3.1-8b-instant',
-      'llama3-70b-8192',
-      'llama3-8b-8192',
-      'mixtral-8x7b-32768',
-      'gemma2-9b-it'
-    ];
-
-    const matched = candidates.find((model) => available.includes(model));
-    return matched || available[0] || 'llama3-8b-8192';
+    const matched = safeTextModels.find((model) => available.includes(model));
+    
+    // Strictly fall back to a safe text model instead of available[0]
+    return matched || 'llama-3.1-8b-instant';
   } catch (err) {
-    console.warn('Unable to query Groq models list, defaulting to llama3-8b-8192:', err.message);
-    return 'llama3-8b-8192';
+    console.warn('Unable to query Groq models list, defaulting to llama-3.1-8b-instant:', err.message);
+    return 'llama-3.1-8b-instant';
   }
 }
 
@@ -83,7 +89,7 @@ app.post('/api/generate-draft', async (req, res) => {
     : 'If a meeting or calendar link is needed, use the exact placeholder tag: "<YOUR_CALENDAR_LINK_HERE>". NEVER invent fake URLs.';
 
   let rawContent = '';
-  let selectedModel = 'llama3-8b-8192';
+  let selectedModel = 'llama-3.1-8b-instant';
 
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
@@ -165,7 +171,6 @@ app.post('/api/dispatch-email', async (req, res) => {
       socketTimeout: 15000,
     });
 
-    // Send Mail
     await transporter.sendMail({
       from: `"${senderEmail}" <${process.env.EMAIL_USER}>`,
       to: recipient,
@@ -174,7 +179,6 @@ app.post('/api/dispatch-email', async (req, res) => {
       replyTo: senderEmail,
     });
 
-    // Non-blocking Database Log Attempt
     try {
       await Email.create({
         sender: senderEmail,
@@ -207,6 +211,12 @@ app.post('/api/dispatch-email', async (req, res) => {
 
     res.status(500).json({ error: error.message || 'Failed to dispatch email.' });
   }
+});
+
+// Serve frontend static assets in production
+app.use(express.static(path.join(__dirname, '../dist')));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
 const PORT = process.env.PORT || 5000;

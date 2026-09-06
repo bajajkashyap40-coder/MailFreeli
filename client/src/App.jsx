@@ -61,7 +61,6 @@ export default function App() {
       return;
     }
 
-    // Reset previous generated state to allow multiple generations
     setGenerating(true);
     setIsDispatched(false);
 
@@ -80,7 +79,7 @@ export default function App() {
         showToast('AI Draft generated successfully!', 'success');
         fetchStats();
       } else {
-        showToast(`Error: ${data.error}`, 'error');
+        showToast(`Error: ${data.error || 'AI generation failed.'}`, 'error');
       }
     } catch (error) {
       showToast('Failed to generate draft. Please try again.', 'error');
@@ -135,9 +134,18 @@ export default function App() {
   return (
     <div style={styles.appContainer}>
       <style>{`
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background-color: #090B0F; font-family: system-ui, -apple-system, sans-serif; overflow-x: hidden; }
-        input:focus, textarea:focus { border-color: #D6A967 !important; outline: none; }
+        html, body, #root {
+          background-color: #090B0F !important;
+          color: #F5F2EA !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          width: 100% !important;
+          overflow-x: hidden !important;
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+        }
+        * { box-sizing: border-box; }
+        
+        input:focus, textarea:focus { border-color: #D6A967 !important; outline: none !important; }
         
         /* Dark Champagne Themed Scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -188,7 +196,7 @@ export default function App() {
         </div>
       </header>
 
-      {/* MAIN CONTAINER */}
+      {/* MAIN CONTENT */}
       <main style={styles.main}>
         
         {/* TWO COLUMN GRID */}
@@ -237,7 +245,7 @@ export default function App() {
                   style={styles.textarea}
                 />
 
-                <label style={{ ...styles.label, marginBottom: '8px' }}>QUICK SUGGESTIONS</label>
+                <label style={{ ...styles.label, marginBottom: '4px' }}>QUICK SUGGESTIONS</label>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {[
                     { label: 'Follow-up email', prompt: 'Draft a follow-up email after meeting.' },
@@ -395,20 +403,20 @@ const styles = {
     backgroundColor: '#090B0F',
     color: '#F5F2EA',
     minHeight: '100vh',
-    width: '100vw',
+    width: '100%',
     display: 'flex',
     flexDirection: 'column',
   },
   midTopAlert: {
     position: 'fixed',
-    top: '80px',
+    top: '72px',
     left: '50%',
     animation: 'dropDown 0.25s ease-out forwards',
     backgroundColor: '#141922',
     border: '1px solid #292E36',
     borderRadius: '14px',
     padding: '12px 18px',
-    boxShadow: '0 12px 30px rgba(0,0,0,0.5)',
+    boxShadow: '0 12px 30px rgba(0,0,0,0.6)',
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
@@ -436,10 +444,10 @@ const styles = {
     zIndex: 100,
   },
   headerInner: {
-    maxWidth: '1400px',
+    maxWidth: '1280px',
     width: '100%',
     margin: '0 auto',
-    padding: '0 24px',
+    padding: '0 20px',
     height: '64px',
     display: 'flex',
     alignItems: 'center',
@@ -482,39 +490,39 @@ const styles = {
     fontWeight: 'bold',
   },
   main: {
-    maxWidth: '1400px',
+    maxWidth: '1280px',
     width: '100%',
     margin: '0 auto',
-    padding: '32px 24px',
+    padding: '24px 20px',
     flex: 1,
     display: 'flex',
     flexDirection: 'column',
-    gap: '32px',
+    gap: '24px',
   },
   gridTwoCol: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-    gap: '24px',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+    gap: '20px',
   },
   card: {
     backgroundColor: '#141922',
     border: '1px solid #292E36',
     borderRadius: '16px',
-    padding: '24px',
+    padding: '20px',
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'space-between',
-    minHeight: '520px',
+    minHeight: '480px',
   },
   cardTitle: { fontSize: '18px', fontWeight: '700', color: '#F5F2EA' },
-  cardSub: { fontSize: '12px', color: '#9CA3AF', marginTop: '2px', marginBottom: '20px' },
-  fieldGroup: { display: 'flex', flexDirection: 'column', gap: '12px' },
+  cardSub: { fontSize: '12px', color: '#9CA3AF', marginTop: '2px', marginBottom: '16px' },
+  fieldGroup: { display: 'flex', flexDirection: 'column', gap: '10px' },
   label: { fontSize: '11px', fontWeight: '600', color: '#9CA3AF', letterSpacing: '0.5px' },
   input: {
     backgroundColor: '#10141B',
     border: '1px solid #292E36',
     borderRadius: '10px',
-    padding: '10px 14px',
+    padding: '10px 12px',
     color: '#F5F2EA',
     fontSize: '13px',
     width: '100%',
@@ -523,7 +531,7 @@ const styles = {
     backgroundColor: '#10141B',
     border: '1px solid #292E36',
     borderRadius: '10px',
-    padding: '12px 14px',
+    padding: '10px 12px',
     color: '#F5F2EA',
     fontSize: '13px',
     width: '100%',
@@ -534,7 +542,7 @@ const styles = {
     border: '1px solid #292E36',
     borderRadius: '20px',
     color: '#F5F2EA',
-    padding: '6px 12px',
+    padding: '5px 10px',
     fontSize: '11px',
     cursor: 'pointer',
   },
@@ -548,22 +556,22 @@ const styles = {
     fontWeight: '700',
     fontSize: '13px',
     cursor: 'pointer',
-    marginTop: '20px',
+    marginTop: '16px',
   },
   previewBox: {
     backgroundColor: '#10141B',
     border: '1px solid #292E36',
     borderRadius: '10px',
-    padding: '16px',
+    padding: '14px',
     position: 'relative',
-    minHeight: '220px',
+    minHeight: '200px',
     display: 'flex',
     flexDirection: 'column',
   },
   copyBtn: {
     position: 'absolute',
-    top: '12px',
-    right: '12px',
+    top: '10px',
+    right: '10px',
     background: 'transparent',
     border: 'none',
     cursor: 'pointer',
@@ -571,17 +579,17 @@ const styles = {
   },
   previewMeta: {
     borderBottom: '1px solid #292E36',
-    paddingBottom: '10px',
-    marginBottom: '10px',
+    paddingBottom: '8px',
+    marginBottom: '8px',
     fontSize: '12px',
-    lineHeight: '1.6',
+    lineHeight: '1.5',
   },
   previewTextarea: {
     backgroundColor: 'transparent',
     border: 'none',
     color: '#F5F2EA',
     fontSize: '13px',
-    lineHeight: '1.6',
+    lineHeight: '1.5',
     resize: 'none',
     width: '100%',
     flex: 1,
@@ -594,18 +602,18 @@ const styles = {
     gap: '6px',
     fontSize: '12px',
     color: '#35D0A0',
-    marginTop: '12px',
+    marginTop: '10px',
   },
   gridFourCol: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
     gap: '16px',
   },
   kpiCard: {
     backgroundColor: '#141922',
     border: '1px solid #292E36',
     borderRadius: '16px',
-    padding: '20px',
+    padding: '16px',
   },
   kpiHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
   kpiLabel: { fontSize: '11px', color: '#9CA3AF', fontWeight: '600' },
@@ -616,7 +624,7 @@ const styles = {
     borderRadius: '10px',
     padding: '2px 6px',
   },
-  kpiValue: { fontSize: '24px', fontWeight: '800', margin: '12px 0 4px 0', color: '#F5F2EA' },
+  kpiValue: { fontSize: '22px', fontWeight: '800', margin: '10px 0 2px 0', color: '#F5F2EA' },
   kpiSub: { fontSize: '11px', color: '#9CA3AF' },
   fullFooter: {
     width: '100%',
@@ -625,10 +633,10 @@ const styles = {
     marginTop: 'auto',
   },
   footerInner: {
-    maxWidth: '1400px',
+    maxWidth: '1280px',
     width: '100%',
     margin: '0 auto',
-    padding: '16px 24px',
+    padding: '16px 20px',
     display: 'flex',
     justify: 'space-between',
     alignItems: 'center',
