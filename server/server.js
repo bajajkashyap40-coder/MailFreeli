@@ -28,13 +28,13 @@ const groq = new Groq({
   timeout: 10000 
 });
 
-// Helper to strictly return standard text models (prevents terms acceptance errors)
+// Helper to get active model dynamically without hitches
 async function getValidModel() {
-  const safeTextModels = [
+  const safeCandidates = [
     'llama-3.3-70b-versatile',
     'llama-3.1-8b-instant',
-    'llama3-70b-8192',
     'llama3-8b-8192',
+    'llama3-70b-8192',
     'mixtral-8x7b-32768',
     'gemma2-9b-it'
   ];
@@ -42,13 +42,20 @@ async function getValidModel() {
   try {
     const modelsList = await groq.models.list();
     const available = modelsList.data.map((m) => m.id);
-    const matched = safeTextModels.find((model) => available.includes(model));
     
-    // Strictly fall back to a safe text model instead of available[0]
-    return matched || 'llama-3.1-8b-instant';
+    // Find first supported candidate in account's active models list
+    const matched = safeCandidates.find((model) => available.includes(model));
+    if (matched) return matched;
+
+    // Fallback search to ensure audio/speech models like 'orpheus' are ignored
+    const fallbackTextModel = available.find(
+      (id) => id.includes('llama') || id.includes('mixtral') || id.includes('gemma')
+    );
+
+    return fallbackTextModel || 'llama-3.3-70b-versatile';
   } catch (err) {
-    console.warn('Unable to query Groq models list, defaulting to llama-3.1-8b-instant:', err.message);
-    return 'llama-3.1-8b-instant';
+    console.warn('Unable to query Groq models list, defaulting to llama-3.3-70b-versatile:', err.message);
+    return 'llama-3.3-70b-versatile';
   }
 }
 
@@ -89,7 +96,7 @@ app.post('/api/generate-draft', async (req, res) => {
     : 'If a meeting or calendar link is needed, use the exact placeholder tag: "<YOUR_CALENDAR_LINK_HERE>". NEVER invent fake URLs.';
 
   let rawContent = '';
-  let selectedModel = 'llama-3.1-8b-instant';
+  let selectedModel = '';
 
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
@@ -117,9 +124,9 @@ Rules:
       rawContent = completion.choices[0]?.message?.content || '{}';
       if (rawContent && rawContent !== '{}') break;
     } catch (err) {
-      console.warn(`Generation attempt ${attempt} failed:`, err.message);
+      console.warn(`Generation attempt ${attempt} failed on model (${selectedModel}):`, err.message);
       if (attempt === 2) {
-        return res.status(500).json({ error: 'AI generation timed out. Please try again.' });
+        return res.status(500).json({ error: 'AI generation timed out or model error. Please try again.' });
       }
     }
   }
