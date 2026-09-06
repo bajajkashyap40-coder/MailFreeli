@@ -136,7 +136,7 @@ Rules:
   res.status(200).json({ subject, body });
 });
 
-// 5. STEP 2: Dispatch Edited Email via Nodemailer with Socket Safeguards
+// 5. STEP 2: Dispatch Edited Email via Nodemailer with Fixed SMTP Timeouts
 app.post('/api/dispatch-email', async (req, res) => {
   const { sender, recipient, prompt, subject, body } = req.body;
 
@@ -148,17 +148,19 @@ app.post('/api/dispatch-email', async (req, res) => {
 
   try {
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
       host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
+      port: 587,
+      secure: false, // TLS
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-      socketTimeout: 15000,
+      tls: {
+        rejectUnauthorized: false, // Avoid local SSL/TLS handshake rejections
+      },
+      connectionTimeout: 20000, // 20s connection timeout
+      greetingTimeout: 20000,   // 20s greeting handshake timeout
+      socketTimeout: 30000,     // 30s socket inactivity timeout
     });
 
     await transporter.sendMail({
