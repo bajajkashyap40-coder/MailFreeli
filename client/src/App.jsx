@@ -2,6 +2,28 @@ import React, { useState, useEffect } from 'react';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
+// SEPARATED FOOTER COMPONENT
+function Footer() {
+  return (
+    <footer style={styles.fullFooter}>
+      <div style={styles.footerInner} className="footer-inner">
+        <div style={styles.footerBrandGroup}>
+          <span style={{ color: '#F5F2EA', fontWeight: '600' }}>© 2026 MailFreeli</span>
+          <span style={{ color: '#292E36' }}>•</span>
+          <span>Built for smarter communication</span>
+          <span style={{ color: '#292E36' }}>•</span>
+          <span>Powered by AI</span>
+        </div>
+
+        <div style={styles.footerStatusGroup}>
+          <span style={styles.statusDot}></span>
+          <span>System Online</span>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
 export default function App() {
   const [sender, setSender] = useState('');
   const [recipient, setRecipient] = useState('');
@@ -196,6 +218,42 @@ export default function App() {
           from { opacity: 0; transform: translate(-50%, -20px); }
           to { opacity: 1; transform: translate(-50%, 0); }
         }
+
+        /* FLEXIBLE RESPONSIVE UI RULES */
+        @media (max-width: 900px) {
+          .cockpit-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .main-layout {
+            padding: 16px 14px !important;
+            gap: 16px !important;
+          }
+          .kpi-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 12px !important;
+          }
+          .modal-box {
+            width: 92% !important;
+            padding: 20px 16px !important;
+          }
+          .footer-inner {
+            flex-direction: column !important;
+            text-align: center !important;
+            gap: 10px !important;
+          }
+        }
+
+        @media (max-width: 420px) {
+          .kpi-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .header-title-sub {
+            display: none !important;
+          }
+        }
       `}</style>
 
       {/* MID-TOP POPUP ALERT */}
@@ -217,11 +275,11 @@ export default function App() {
       {/* OTP VERIFICATION MODAL */}
       {showOtpModal && (
         <div style={styles.modalOverlay}>
-          <div style={styles.modalContent}>
+          <div style={styles.modalContent} className="modal-box">
             <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#F5F2EA', marginBottom: '8px' }}>
               🔒 Security Verification
             </h3>
-            <p style={{ fontSize: '12px', color: '#9CA3AF', marginBottom: '16px' }}>
+            <p style={{ fontSize: '12px', color: '#9CA3AF', marginBottom: '16px', lineHeight: '1.5' }}>
               A 6-digit OTP has been sent to <strong>{sender || 'your sender email'}</strong>. Enter it below to authorize this email dispatch.
             </p>
 
@@ -265,7 +323,7 @@ export default function App() {
                 <span style={{ fontWeight: '700', fontSize: '16px', color: '#F5F2EA' }}>MailFreeli</span>
                 <span style={styles.enterprisePill}>Enterprise</span>
               </div>
-              <div style={{ fontSize: '11px', color: '#9CA3AF' }}>AI-Powered Email Dispatch</div>
+              <div style={{ fontSize: '11px', color: '#9CA3AF' }} className="header-title-sub">AI-Powered Email Dispatch</div>
             </div>
           </div>
 
@@ -277,8 +335,8 @@ export default function App() {
       </header>
 
       {/* MAIN CONTENT */}
-      <main style={styles.main}>
-        <div style={styles.gridTwoCol}>
+      <main style={styles.main} className="main-layout">
+        <div style={styles.gridTwoCol} className="cockpit-grid">
           
           {/* LEFT: AI COCKPIT */}
           <section style={styles.card}>
@@ -417,7 +475,7 @@ export default function App() {
         </div>
 
         {/* METRICS ROW */}
-        <section style={styles.gridFourCol}>
+        <section style={styles.gridFourCol} className="kpi-grid">
           <div style={styles.kpiCard}>
             <div style={styles.kpiHeader}>
               <span style={styles.kpiLabel}>AI SUCCESS RATE</span>
@@ -457,21 +515,8 @@ export default function App() {
 
       </main>
 
-      {/* FULL-WIDTH FOOTER */}
-      <footer style={styles.fullFooter}>
-        <div style={styles.footerInner}>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={{ color: '#F5F2EA', fontWeight: '600' }}>© 2026 MailFreeli</span>
-            <span style={{ color: '#292E36' }}>•</span>
-            <span>Built for smarter communication</span>
-            <span style={{ color: '#292E36' }}>•</span>
-            <span>Powered by AI</span>
-          </div>
-          <div style={{ color: '#35D0A0', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }}>
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#35D0A0', display: 'inline-block' }}></span> System Online
-          </div>
-        </div>
-      </footer>
+      {/* RENDER SEPARATED FOOTER COMPONENT */}
+      <Footer />
     </div>
   );
 }
@@ -747,7 +792,7 @@ const styles = {
     maxWidth: '1280px',
     width: '100%',
     margin: '0 auto',
-    padding: '16px 20px',
+    padding: '18px 20px',
     display: 'flex',
     justify: 'space-between',
     alignItems: 'center',
@@ -755,5 +800,25 @@ const styles = {
     gap: '12px',
     fontSize: '12px',
     color: '#9CA3AF',
+  },
+  footerBrandGroup: {
+    display: 'flex',
+    gap: '8px',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+  },
+  footerStatusGroup: {
+    color: '#35D0A0',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    fontWeight: '500',
+  },
+  statusDot: {
+    width: '8px',
+    height: '8px',
+    borderRadius: '50%',
+    backgroundColor: '#35D0A0',
+    display: 'inline-block',
   },
 };

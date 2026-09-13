@@ -17,6 +17,56 @@ const otpStore = new Map();
 
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
+// HTML TEMPLATES
+const generateWelcomeOtpHtml = (otp, targetEmail) => `
+  <div style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #090B0F; color: #F5F2EA; padding: 40px 20px; border-radius: 16px; max-width: 540px; margin: 0 auto; border: 1px solid #292E36;">
+    
+    <!-- HEADER LOGO -->
+    <div style="text-align: center; margin-bottom: 24px;">
+      <div style="display: inline-block; width: 44px; height: 44px; line-height: 44px; border-radius: 12px; background: linear-gradient(135deg, #D6A967, #B88A48); color: #090B0F; font-weight: 800; font-size: 22px;">M</div>
+      <h1 style="color: #F5F2EA; margin: 12px 0 4px 0; font-size: 22px; font-weight: 700;">Welcome to MailFreeli</h1>
+      <p style="color: #9CA3AF; font-size: 13px; margin: 0;">AI-Powered Email Dispatch Platform</p>
+    </div>
+
+    <!-- MAIN BODY -->
+    <div style="background-color: #141922; border: 1px solid #292E36; border-radius: 14px; padding: 24px; margin-bottom: 24px;">
+      <h2 style="color: #D6A967; margin: 0 0 12px 0; font-size: 16px; font-weight: 600;">🔒 Verification Code Required</h2>
+      <p style="color: #9CA3AF; font-size: 13px; line-height: 1.6; margin: 0 0 20px 0;">
+        Hello! You are authorizing an email dispatch from <strong>${targetEmail}</strong>. Please enter the 6-digit OTP code below to confirm your request:
+      </p>
+
+      <!-- OTP CODE DISPLAY -->
+      <div style="background-color: #10141B; border: 1px dashed #D6A967; border-radius: 10px; padding: 18px; text-align: center;">
+        <span style="font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #D6A967;">${otp}</span>
+      </div>
+
+      <p style="color: #EF4444; font-size: 11px; text-align: center; margin: 12px 0 0 0; font-weight: 600;">
+        ⚠️ Code expires in 5 minutes
+      </p>
+    </div>
+
+    <!-- FOOTER -->
+    <div style="border-top: 1px solid #292E36; padding-top: 16px; text-align: center; font-size: 11px; color: #9CA3AF;">
+      © 2026 MailFreeli Enterprise • Built for smarter communication
+    </div>
+  </div>
+`;
+
+const generateDispatchHtml = (subject, body, senderEmail) => `
+  <div style="font-family: system-ui, -apple-system, sans-serif; background-color: #ffffff; color: #111827; padding: 32px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #E5E7EB;">
+    <div style="border-bottom: 2px solid #F3F4F6; padding-bottom: 16px; margin-bottom: 24px;">
+      <h2 style="margin: 0; font-size: 20px; color: #111827;">${subject}</h2>
+      <p style="margin: 6px 0 0 0; font-size: 13px; color: #6B7280;">From: ${senderEmail}</p>
+    </div>
+    <div style="font-size: 15px; line-height: 1.6; color: #374151; white-space: pre-wrap;">
+${body}
+    </div>
+    <div style="border-top: 1px solid #F3F4F6; margin-top: 32px; padding-top: 16px; font-size: 12px; color: #9CA3AF; text-align: center;">
+      Sent via MailFreeli Enterprise Dispatcher
+    </div>
+  </div>
+`;
+
 // 1. Connect to MongoDB Atlas
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB connected successfully'))
@@ -151,7 +201,7 @@ Rules:
   res.status(200).json({ subject, body });
 });
 
-// 5. STEP 2: Send Verification OTP Directly to the User-Entered Sender Email
+// 5. STEP 2: Send Welcome + Verification OTP Email (HTML Template)
 app.post('/api/send-otp', async (req, res) => {
   const { sender } = req.body;
   const targetSenderEmail = sender || process.env.EMAIL_USER;
@@ -182,12 +232,12 @@ app.post('/api/send-otp', async (req, res) => {
 
     await transporter.sendMail({
       from: `"MailFreeli Security" <${process.env.EMAIL_USER}>`,
-      to: targetSenderEmail, // Sends OTP directly to the specified sender email
-      subject: '🔒 Your MailFreeli Verification OTP Code',
-      text: `Your OTP for authorizing the email dispatch is: ${otp}\n\nThis code will expire in 5 minutes.`,
+      to: targetSenderEmail,
+      subject: '🔒 Welcome to MailFreeli - Your OTP Verification Code',
+      html: generateWelcomeOtpHtml(otp, targetSenderEmail),
     });
 
-    console.log(`[OTP SENT] Verification code successfully delivered to ${targetSenderEmail}`);
+    console.log(`[OTP SENT] Welcome & OTP code delivered to ${targetSenderEmail}`);
     res.status(200).json({ message: `Verification OTP sent to ${targetSenderEmail}!` });
   } catch (error) {
     console.error('SMTP OTP Dispatch Error:', error.message);
@@ -195,7 +245,7 @@ app.post('/api/send-otp', async (req, res) => {
   }
 });
 
-// 6. STEP 3: Verify OTP and Dispatch Email via Nodemailer
+// 6. STEP 3: Verify OTP and Dispatch Styled Email
 app.post('/api/verify-and-dispatch', async (req, res) => {
   const { otp, sender, recipient, prompt, subject, body } = req.body;
 
@@ -241,7 +291,7 @@ app.post('/api/verify-and-dispatch', async (req, res) => {
       from: `"${targetSenderEmail}" <${process.env.EMAIL_USER}>`,
       to: recipient,
       subject: subject,
-      text: body,
+      html: generateDispatchHtml(subject, body, targetSenderEmail),
       replyTo: targetSenderEmail,
     });
 
