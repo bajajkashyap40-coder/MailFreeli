@@ -151,23 +151,18 @@ Rules:
   res.status(200).json({ subject, body });
 });
 
-// 5. STEP 2: Send Verification OTP to Sender Email with SMTP Delivery
+// 5. STEP 2: Send Verification OTP Directly to Email Inbox (Strict Delivery)
 app.post('/api/send-otp', async (req, res) => {
   const senderEmail = process.env.EMAIL_USER;
 
   if (!senderEmail) {
-    return res.status(400).json({ error: 'Sender email configuration is missing.' });
+    return res.status(400).json({ error: 'Sender email configuration is missing in .env.' });
   }
 
   const otp = generateOTP();
   const expiresAt = Date.now() + 5 * 60 * 1000; // 5-minute validity
 
   otpStore.set(senderEmail, { otp, expiresAt });
-
-  // Terminal logging for dev debugging
-  console.log('\n=============================================');
-  console.log(`🔑 DEV TEST OTP CODE: [ ${otp} ]`);
-  console.log('=============================================\n');
 
   try {
     const transporter = nodemailer.createTransport({
@@ -179,24 +174,23 @@ app.post('/api/send-otp', async (req, res) => {
         pass: process.env.EMAIL_PASS,
       },
       tls: { rejectUnauthorized: false },
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-      socketTimeout: 10000,
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 15000,
     });
 
     await transporter.sendMail({
       from: `"MailFreeli Security" <${process.env.EMAIL_USER}>`,
       to: senderEmail,
-      subject: 'Your MailFreeli Verification OTP',
-      text: `Your OTP for authorizing the email dispatch is: ${otp}. It will expire in 5 minutes.`,
+      subject: '🔒 Your MailFreeli Verification OTP Code',
+      text: `Your OTP for authorizing the email dispatch is: ${otp}\n\nThis code will expire in 5 minutes.`,
     });
 
+    console.log(`[OTP SENT] Verification code successfully delivered to ${senderEmail}`);
     res.status(200).json({ message: 'Verification OTP sent to your email inbox!' });
   } catch (error) {
-    console.warn('SMTP OTP Dispatch warning (Network blocked locally?):', error.message);
-    res.status(200).json({ 
-      message: 'OTP generated! Check your terminal console or inbox once deployed.' 
-    });
+    console.error('SMTP OTP Dispatch Error:', error.message);
+    res.status(500).json({ error: `Failed to deliver OTP to inbox: ${error.message}` });
   }
 });
 
@@ -272,8 +266,6 @@ app.post('/api/verify-and-dispatch', async (req, res) => {
         sender: senderEmail,
         recipient,
         prompt: prompt || 'Direct Dispatch',
-        subject,
-        body,
         status: 'FAILED',
       });
     } catch (dbErr) {
