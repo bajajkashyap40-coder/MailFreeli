@@ -93,7 +93,7 @@ export default function App() {
     }
   };
 
-  // Initiate Dispatch: Request OTP first
+  // Initiate Dispatch: Send target sender email to request OTP
   const handleInitiateDispatch = async () => {
     if (!recipient || !subject || !body) {
       showToast('Missing email content to dispatch!', 'error');
@@ -106,13 +106,14 @@ export default function App() {
       const response = await fetch(`${API_BASE_URL}/api/send-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sender }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
         setShowOtpModal(true);
-        showToast(data.message || 'OTP generated! Enter code to verify.', 'success');
+        showToast(data.message || 'OTP sent! Check your sender inbox.', 'success');
       } else {
         showToast(`Error: ${data.error}`, 'error');
       }
@@ -138,7 +139,7 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           otp: otpInput,
-          sender: sender || 'sender@domain.com',
+          sender,
           recipient,
           prompt,
           subject,
@@ -221,7 +222,7 @@ export default function App() {
               🔒 Security Verification
             </h3>
             <p style={{ fontSize: '12px', color: '#9CA3AF', marginBottom: '16px' }}>
-              A 6-digit OTP has been generated for your sender email. Enter it below to authorize this email dispatch.
+              A 6-digit OTP has been sent to <strong>{sender || 'your sender email'}</strong>. Enter it below to authorize this email dispatch.
             </p>
 
             <input

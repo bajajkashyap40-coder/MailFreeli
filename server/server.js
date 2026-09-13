@@ -12,7 +12,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// In-memory OTP Store: { "sender_email": { otp: "123456", expiresAt: timestamp } }
+// In-memory OTP Store: { "target_sender_email": { otp: "123456", expiresAt: timestamp } }
 const otpStore = new Map();
 
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
@@ -151,18 +151,19 @@ Rules:
   res.status(200).json({ subject, body });
 });
 
-// 5. STEP 2: Send Verification OTP Directly to Email Inbox (Strict Delivery)
+// 5. STEP 2: Send Verification OTP Directly to the User-Entered Sender Email
 app.post('/api/send-otp', async (req, res) => {
-  const senderEmail = process.env.EMAIL_USER;
+  const { sender } = req.body;
+  const targetSenderEmail = sender || process.env.EMAIL_USER;
 
-  if (!senderEmail) {
-    return res.status(400).json({ error: 'Sender email configuration is missing in .env.' });
+  if (!targetSenderEmail) {
+    return res.status(400).json({ error: 'Sender email configuration is missing.' });
   }
 
   const otp = generateOTP();
   const expiresAt = Date.now() + 5 * 60 * 1000; // 5-minute validity
 
-  otpStore.set(senderEmail, { otp, expiresAt });
+  otpStore.set(targetSenderEmail, { otp, expiresAt });
 
   try {
     const transporter = nodemailer.createTransport({
@@ -181,13 +182,13 @@ app.post('/api/send-otp', async (req, res) => {
 
     await transporter.sendMail({
       from: `"MailFreeli Security" <${process.env.EMAIL_USER}>`,
-      to: senderEmail,
+      to: targetSenderEmail, // Sends OTP directly to the specified sender email
       subject: '🔒 Your MailFreeli Verification OTP Code',
       text: `Your OTP for authorizing the email dispatch is: ${otp}\n\nThis code will expire in 5 minutes.`,
     });
 
-    console.log(`[OTP SENT] Verification code successfully delivered to ${senderEmail}`);
-    res.status(200).json({ message: 'Verification OTP sent to your email inbox!' });
+    console.log(`[OTP SENT] Verification code successfully delivered to ${targetSenderEmail}`);
+    res.status(200).json({ message: `Verification OTP sent to ${targetSenderEmail}!` });
   } catch (error) {
     console.error('SMTP OTP Dispatch Error:', error.message);
     res.status(500).json({ error: `Failed to deliver OTP to inbox: ${error.message}` });
@@ -202,15 +203,15 @@ app.post('/api/verify-and-dispatch', async (req, res) => {
     return res.status(400).json({ error: 'OTP, recipient, subject, and body are required.' });
   }
 
-  const senderEmail = sender || process.env.EMAIL_USER;
-  const storedOTP = otpStore.get(process.env.EMAIL_USER);
+  const targetSenderEmail = sender || process.env.EMAIL_USER;
+  const storedOTP = otpStore.get(targetSenderEmail);
 
   if (!storedOTP) {
     return res.status(400).json({ error: 'No active OTP found. Please click send again.' });
   }
 
   if (Date.now() > storedOTP.expiresAt) {
-    otpStore.delete(process.env.EMAIL_USER);
+    otpStore.delete(targetSenderEmail);
     return res.status(400).json({ error: 'OTP has expired. Please request a new one.' });
   }
 
@@ -219,7 +220,7 @@ app.post('/api/verify-and-dispatch', async (req, res) => {
   }
 
   // Clear valid OTP
-  otpStore.delete(process.env.EMAIL_USER);
+  otpStore.delete(targetSenderEmail);
 
   try {
     const transporter = nodemailer.createTransport({
@@ -237,16 +238,16 @@ app.post('/api/verify-and-dispatch', async (req, res) => {
     });
 
     await transporter.sendMail({
-      from: `"${senderEmail}" <${process.env.EMAIL_USER}>`,
+      from: `"${targetSenderEmail}" <${process.env.EMAIL_USER}>`,
       to: recipient,
       subject: subject,
       text: body,
-      replyTo: senderEmail,
+      replyTo: targetSenderEmail,
     });
 
     try {
       await Email.create({
-        sender: senderEmail,
+        sender: targetSenderEmail,
         recipient,
         prompt: prompt || 'Direct Dispatch',
         subject,
@@ -263,9 +264,11 @@ app.post('/api/verify-and-dispatch', async (req, res) => {
     
     try {
       await Email.create({
-        sender: senderEmail,
+        sender: targetSenderEmail,
         recipient,
         prompt: prompt || 'Direct Dispatch',
+        subject,
+        body,
         status: 'FAILED',
       });
     } catch (dbErr) {
