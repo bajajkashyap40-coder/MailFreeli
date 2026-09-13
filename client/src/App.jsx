@@ -112,7 +112,7 @@ export default function App() {
 
       if (response.ok) {
         setShowOtpModal(true);
-        showToast('OTP sent to sender email! Enter it below.', 'success');
+        showToast(data.message || 'OTP generated! Enter code to verify.', 'success');
       } else {
         showToast(`Error: ${data.error}`, 'error');
       }
@@ -221,13 +221,13 @@ export default function App() {
               🔒 Security Verification
             </h3>
             <p style={{ fontSize: '12px', color: '#9CA3AF', marginBottom: '16px' }}>
-              We've sent a 6-digit OTP to your registered sender email. Enter it below to authorize this dispatch.
+              A 6-digit OTP has been generated for your sender email. Enter it below to authorize this email dispatch.
             </p>
 
             <input
               type="text"
               maxLength="6"
-              placeholder="Enter 6-Digit OTP"
+              placeholder="Enter OTP"
               value={otpInput}
               onChange={(e) => setOtpInput(e.target.value)}
               style={{ ...styles.input, textAlign: 'center', letterSpacing: '4px', fontSize: '18px', fontWeight: 'bold' }}

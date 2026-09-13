@@ -151,7 +151,7 @@ Rules:
   res.status(200).json({ subject, body });
 });
 
-// 5. STEP 2: Send Verification OTP to Sender Email with Local Dev Logging
+// 5. STEP 2: Send Verification OTP to Sender Email with SMTP Delivery
 app.post('/api/send-otp', async (req, res) => {
   const senderEmail = process.env.EMAIL_USER;
 
@@ -164,7 +164,7 @@ app.post('/api/send-otp', async (req, res) => {
 
   otpStore.set(senderEmail, { otp, expiresAt });
 
-  // PRINT TO TERMINAL FOR LOCAL DEV TESTING
+  // Terminal logging for dev debugging
   console.log('\n=============================================');
   console.log(`🔑 DEV TEST OTP CODE: [ ${otp} ]`);
   console.log('=============================================\n');
@@ -191,12 +191,11 @@ app.post('/api/send-otp', async (req, res) => {
       text: `Your OTP for authorizing the email dispatch is: ${otp}. It will expire in 5 minutes.`,
     });
 
-    res.status(200).json({ message: 'Verification OTP sent to your sender email!' });
+    res.status(200).json({ message: 'Verification OTP sent to your email inbox!' });
   } catch (error) {
-    console.warn('SMTP OTP Dispatch warning (Network blocked?):', error.message);
-    // Allow local dev workflow to continue using the terminal printed OTP code
+    console.warn('SMTP OTP Dispatch warning (Network blocked locally?):', error.message);
     res.status(200).json({ 
-      message: 'OTP generated! Check your terminal console (Local SMTP connection blocked).' 
+      message: 'OTP generated! Check your terminal console or inbox once deployed.' 
     });
   }
 });
