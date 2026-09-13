@@ -15,6 +15,11 @@ export default function App() {
   const [generating, setGenerating] = useState(false);
   const [dispatching, setDispatching] = useState(false);
 
+  // OTP Verification States
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otpInput, setOtpInput] = useState('');
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+
   // Mid-Top Alert State
   const [toast, setToast] = useState(null);
 
@@ -88,7 +93,8 @@ export default function App() {
     }
   };
 
-  const handleDispatchEmail = async () => {
+  // Initiate Dispatch: Request OTP first
+  const handleInitiateDispatch = async () => {
     if (!recipient || !subject || !body) {
       showToast('Missing email content to dispatch!', 'error');
       return;
@@ -97,10 +103,41 @@ export default function App() {
     setDispatching(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/dispatch-email`, {
+      const response = await fetch(`${API_BASE_URL}/api/send-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setShowOtpModal(true);
+        showToast('OTP sent to sender email! Enter it below.', 'success');
+      } else {
+        showToast(`Error: ${data.error}`, 'error');
+      }
+    } catch (error) {
+      showToast('Failed to request OTP.', 'error');
+    } finally {
+      setDispatching(false);
+    }
+  };
+
+  // Verify OTP and complete Email Dispatch
+  const handleVerifyAndDispatch = async () => {
+    if (!otpInput) {
+      showToast('Please enter the verification OTP!', 'error');
+      return;
+    }
+
+    setVerifyingOtp(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/verify-and-dispatch`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          otp: otpInput,
           sender: sender || 'sender@domain.com',
           recipient,
           prompt,
@@ -113,15 +150,17 @@ export default function App() {
 
       if (response.ok) {
         setIsDispatched(true);
-        showToast('Email dispatched via SMTP successfully!', 'success');
+        setShowOtpModal(false);
+        setOtpInput('');
+        showToast('OTP verified & email dispatched successfully!', 'success');
         fetchStats();
       } else {
         showToast(`Error: ${data.error}`, 'error');
       }
     } catch (error) {
-      showToast('Failed to dispatch email.', 'error');
+      showToast('OTP verification failed.', 'error');
     } finally {
-      setDispatching(false);
+      setVerifyingOtp(false);
     }
   };
 
@@ -147,7 +186,6 @@ export default function App() {
         
         input:focus, textarea:focus { border-color: #D6A967 !important; outline: none !important; }
         
-        /* Dark Champagne Themed Scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #10141B; }
         ::-webkit-scrollbar-thumb { background: #292E36; border-radius: 4px; }
@@ -175,6 +213,47 @@ export default function App() {
         </div>
       )}
 
+      {/* OTP VERIFICATION MODAL */}
+      {showOtpModal && (
+        <div style={styles.modalOverlay}>
+          <div style={styles.modalContent}>
+            <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#F5F2EA', marginBottom: '8px' }}>
+              🔒 Security Verification
+            </h3>
+            <p style={{ fontSize: '12px', color: '#9CA3AF', marginBottom: '16px' }}>
+              We've sent a 6-digit OTP to your registered sender email. Enter it below to authorize this dispatch.
+            </p>
+
+            <input
+              type="text"
+              maxLength="6"
+              placeholder="Enter 6-Digit OTP"
+              value={otpInput}
+              onChange={(e) => setOtpInput(e.target.value)}
+              style={{ ...styles.input, textAlign: 'center', letterSpacing: '4px', fontSize: '18px', fontWeight: 'bold' }}
+            />
+
+            <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
+              <button
+                type="button"
+                onClick={() => setShowOtpModal(false)}
+                style={styles.secondaryBtn}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleVerifyAndDispatch}
+                disabled={verifyingOtp}
+                style={{ ...styles.primaryBtn, marginTop: 0, opacity: verifyingOtp ? 0.6 : 1 }}
+              >
+                {verifyingOtp ? 'Verifying...' : 'Verify & Send'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* FULL-WIDTH HEADER */}
       <header style={styles.fullHeader}>
         <div style={styles.headerInner}>
@@ -198,8 +277,6 @@ export default function App() {
 
       {/* MAIN CONTENT */}
       <main style={styles.main}>
-        
-        {/* TWO COLUMN GRID */}
         <div style={styles.gridTwoCol}>
           
           {/* LEFT: AI COCKPIT */}
@@ -323,11 +400,11 @@ export default function App() {
             <div>
               <button
                 type="button"
-                onClick={handleDispatchEmail}
+                onClick={handleInitiateDispatch}
                 disabled={dispatching || !body}
                 style={{ ...styles.primaryBtn, opacity: dispatching || !body ? 0.5 : 1 }}
               >
-                🚀 {dispatching ? 'Sending Email...' : 'Send Email via SMTP'}
+                🚀 {dispatching ? 'Sending OTP...' : 'Send Email via SMTP'}
               </button>
 
               <div style={styles.statusIndicator}>
@@ -383,7 +460,7 @@ export default function App() {
       <footer style={styles.fullFooter}>
         <div style={styles.footerInner}>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={{ color: '#F5F2EA', fontWeight: '600' }}>© 2025 MailFreeli</span>
+            <span style={{ color: '#F5F2EA', fontWeight: '600' }}>© 2026 MailFreeli</span>
             <span style={{ color: '#292E36' }}>•</span>
             <span>Built for smarter communication</span>
             <span style={{ color: '#292E36' }}>•</span>
@@ -423,6 +500,39 @@ const styles = {
     zIndex: 9999,
     maxWidth: '380px',
     width: '90%',
+  },
+  modalOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    width: '100vw',
+    height: '100vh',
+    backgroundColor: 'rgba(9, 11, 15, 0.85)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10000,
+    backdropFilter: 'blur(4px)',
+  },
+  modalContent: {
+    backgroundColor: '#141922',
+    border: '1px solid #292E36',
+    borderRadius: '16px',
+    padding: '24px',
+    maxWidth: '400px',
+    width: '90%',
+    boxShadow: '0 20px 40px rgba(0,0,0,0.8)',
+  },
+  secondaryBtn: {
+    width: '100%',
+    padding: '12px',
+    borderRadius: '10px',
+    border: '1px solid #292E36',
+    backgroundColor: '#10141B',
+    color: '#F5F2EA',
+    fontWeight: '600',
+    fontSize: '13px',
+    cursor: 'pointer',
   },
   alertIcon: {
     width: '28px',

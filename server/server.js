@@ -12,6 +12,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// In-memory OTP Store: { "sender_email": { otp: "123456", expiresAt: timestamp } }
+const otpStore = new Map();
+
+const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
+
 // 1. Connect to MongoDB Atlas
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB connected successfully'))
@@ -23,7 +28,6 @@ const groq = new Groq({
   timeout: 10000 
 });
 
-// Helper to safely fetch active Groq text generation models only
 async function getValidModel() {
   const safeCandidates = [
     'llama-3.3-70b-versatile',
@@ -40,11 +44,9 @@ async function getValidModel() {
     const modelsList = await groq.models.list();
     const available = modelsList.data.map((m) => m.id);
     
-    // 1. Check if any primary text candidate exists in your active account
     const matched = safeCandidates.find((model) => available.includes(model));
     if (matched) return matched;
 
-    // 2. Fallback: Find a valid text model while strictly excluding safety, guard, audio, or vision models
     const fallbackTextModel = available.find((id) => {
       const lower = id.toLowerCase();
       const isTextModel = lower.includes('llama') || lower.includes('mixtral') || lower.includes('gemma') || lower.includes('gpt');
@@ -149,15 +151,18 @@ Rules:
   res.status(200).json({ subject, body });
 });
 
-// 5. STEP 2: Dispatch Edited Email via Nodemailer
-app.post('/api/dispatch-email', async (req, res) => {
-  const { sender, recipient, prompt, subject, body } = req.body;
+// 5. STEP 2: Send Verification OTP to Sender Email
+app.post('/api/send-otp', async (req, res) => {
+  const senderEmail = process.env.EMAIL_USER;
 
-  if (!recipient || !subject || !body) {
-    return res.status(400).json({ error: 'Recipient, subject, and body are required.' });
+  if (!senderEmail) {
+    return res.status(400).json({ error: 'Sender email configuration is missing.' });
   }
 
-  const senderEmail = sender || process.env.EMAIL_USER;
+  const otp = generateOTP();
+  const expiresAt = Date.now() + 5 * 60 * 1000; // 5-minute validity
+
+  otpStore.set(senderEmail, { otp, expiresAt });
 
   try {
     const transporter = nodemailer.createTransport({
@@ -168,11 +173,60 @@ app.post('/api/dispatch-email', async (req, res) => {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
-      tls: {
-        rejectUnauthorized: false,
+      tls: { rejectUnauthorized: false },
+    });
+
+    await transporter.sendMail({
+      from: `"MailFreeli Security" <${process.env.EMAIL_USER}>`,
+      to: senderEmail,
+      subject: 'Your MailFreeli Verification OTP',
+      text: `Your OTP for authorizing the email dispatch is: ${otp}. It will expire in 5 minutes.`,
+    });
+
+    res.status(200).json({ message: 'Verification OTP sent to your sender email!' });
+  } catch (error) {
+    console.error('OTP Dispatch error:', error.message);
+    res.status(500).json({ error: 'Failed to send verification OTP.' });
+  }
+});
+
+// 6. STEP 3: Verify OTP and Dispatch Email via Nodemailer
+app.post('/api/verify-and-dispatch', async (req, res) => {
+  const { otp, sender, recipient, prompt, subject, body } = req.body;
+
+  if (!otp || !recipient || !subject || !body) {
+    return res.status(400).json({ error: 'OTP, recipient, subject, and body are required.' });
+  }
+
+  const senderEmail = sender || process.env.EMAIL_USER;
+  const storedOTP = otpStore.get(process.env.EMAIL_USER);
+
+  if (!storedOTP) {
+    return res.status(400).json({ error: 'No active OTP found. Please click send again.' });
+  }
+
+  if (Date.now() > storedOTP.expiresAt) {
+    otpStore.delete(process.env.EMAIL_USER);
+    return res.status(400).json({ error: 'OTP has expired. Please request a new one.' });
+  }
+
+  if (storedOTP.otp !== otp.trim()) {
+    return res.status(400).json({ error: 'Invalid OTP entered. Please try again.' });
+  }
+
+  // Clear valid OTP
+  otpStore.delete(process.env.EMAIL_USER);
+
+  try {
+    const transporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false, 
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
       },
-      logger: true,
-      debug: true, 
+      tls: { rejectUnauthorized: false },
       connectionTimeout: 15000,
       greetingTimeout: 15000,
       socketTimeout: 15000,
@@ -199,7 +253,7 @@ app.post('/api/dispatch-email', async (req, res) => {
       console.warn('Email sent, but DB logging failed:', dbErr.message);
     }
 
-    res.status(200).json({ message: 'Email dispatched successfully!' });
+    res.status(200).json({ message: 'OTP verified and email dispatched successfully!' });
   } catch (error) {
     console.error('Dispatch error details:', error.message);
     
