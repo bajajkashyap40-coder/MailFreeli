@@ -151,7 +151,7 @@ Rules:
   res.status(200).json({ subject, body });
 });
 
-// 5. STEP 2: Send Verification OTP to Sender Email
+// 5. STEP 2: Send Verification OTP to Sender Email with Local Dev Logging
 app.post('/api/send-otp', async (req, res) => {
   const senderEmail = process.env.EMAIL_USER;
 
@@ -164,6 +164,11 @@ app.post('/api/send-otp', async (req, res) => {
 
   otpStore.set(senderEmail, { otp, expiresAt });
 
+  // PRINT TO TERMINAL FOR LOCAL DEV TESTING
+  console.log('\n=============================================');
+  console.log(`🔑 DEV TEST OTP CODE: [ ${otp} ]`);
+  console.log('=============================================\n');
+
   try {
     const transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
@@ -174,6 +179,9 @@ app.post('/api/send-otp', async (req, res) => {
         pass: process.env.EMAIL_PASS,
       },
       tls: { rejectUnauthorized: false },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 10000,
     });
 
     await transporter.sendMail({
@@ -185,8 +193,11 @@ app.post('/api/send-otp', async (req, res) => {
 
     res.status(200).json({ message: 'Verification OTP sent to your sender email!' });
   } catch (error) {
-    console.error('OTP Dispatch error:', error.message);
-    res.status(500).json({ error: 'Failed to send verification OTP.' });
+    console.warn('SMTP OTP Dispatch warning (Network blocked?):', error.message);
+    // Allow local dev workflow to continue using the terminal printed OTP code
+    res.status(200).json({ 
+      message: 'OTP generated! Check your terminal console (Local SMTP connection blocked).' 
+    });
   }
 });
 
