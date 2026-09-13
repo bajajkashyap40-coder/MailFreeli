@@ -515,7 +515,7 @@ export default function App() {
 
       </main>
 
-      {/* RENDER SEPARATED FOOTER COMPONENT */}
+      {/* SEPARATED FOOTER COMPONENT */}
       <Footer />
     </div>
   );
