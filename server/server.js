@@ -67,6 +67,11 @@ ${body}
   </div>
 `;
 
+// Root Health Check Endpoint (Fixes "Cannot GET /" on Render)
+app.get('/', (req, res) => {
+  res.status(200).json({ status: 'Online', message: 'MailFreeli API Engine Running' });
+});
+
 // 1. Connect to MongoDB Atlas
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB connected successfully'))
