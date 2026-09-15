@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import confetti from 'canvas-confetti';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-// SEPARATED FOOTER COMPONENT WITH PULSING STATUS DOT
+// SEPARATED FOOTER COMPONENT
 function Footer() {
   return (
     <footer style={styles.fullFooter}>
@@ -42,6 +43,9 @@ export default function App() {
   const [otpInput, setOtpInput] = useState('');
   const [verifyingOtp, setVerifyingOtp] = useState(false);
 
+  // OTP Countdown Timer (300 seconds = 5 mins)
+  const [otpTimeLeft, setOtpTimeLeft] = useState(300);
+
   // Mid-Top Alert State
   const [toast, setToast] = useState(null);
 
@@ -80,7 +84,30 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // 1-CLICK REEL DEMO AUTO-FILL FEATURE
+  // OTP Countdown Timer Logic
+  useEffect(() => {
+    let timer;
+    if (showOtpModal && otpTimeLeft > 0) {
+      timer = setInterval(() => {
+        setOtpTimeLeft((prev) => prev - 1);
+      }, 1000);
+    } else if (otpTimeLeft === 0) {
+      setShowOtpModal(false);
+      showToast('OTP expired! Please request a new one.', 'error');
+    }
+    return () => clearInterval(timer);
+  }, [showOtpModal, otpTimeLeft]);
+
+  // CONFETTI BURST ANIMATION
+  const triggerConfetti = () => {
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#D6A967', '#35D0A0', '#F5F2EA', '#F0C98A']
+    });
+  };
+
   const handleReelDemoFill = () => {
     setSender('demo.agent@mailfreeli.ai');
     setRecipient('alex.client@enterprise.com');
@@ -124,7 +151,6 @@ export default function App() {
     }
   };
 
-  // Initiate Dispatch: Send target sender email to request OTP
   const handleInitiateDispatch = async () => {
     if (!recipient || !subject || !body) {
       showToast('Missing email content to dispatch!', 'error');
@@ -143,6 +169,7 @@ export default function App() {
       const data = await response.json();
 
       if (response.ok) {
+        setOtpTimeLeft(300); // Reset to 5 mins
         setShowOtpModal(true);
         showToast(data.message || 'OTP sent! Check your sender inbox.', 'success');
       } else {
@@ -155,7 +182,6 @@ export default function App() {
     }
   };
 
-  // Verify OTP and complete Email Dispatch
   const handleVerifyAndDispatch = async () => {
     if (!otpInput) {
       showToast('Please enter the verification OTP!', 'error');
@@ -184,6 +210,7 @@ export default function App() {
         setIsDispatched(true);
         setShowOtpModal(false);
         setOtpInput('');
+        triggerConfetti(); // TRIGGER CONFETTI ON DISPATCH
         showToast('OTP verified & email dispatched successfully!', 'success');
         fetchStats();
       } else {
@@ -200,6 +227,12 @@ export default function App() {
     if (!body) return;
     navigator.clipboard.writeText(`Subject: ${subject}\n\n${body}`);
     showToast('Copied draft to clipboard!', 'success');
+  };
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
   return (
@@ -260,7 +293,6 @@ export default function App() {
           box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5) !important;
         }
 
-        /* FLEXIBLE RESPONSIVE UI RULES */
         @media (max-width: 900px) {
           .cockpit-grid {
             grid-template-columns: 1fr !important;
@@ -313,13 +345,19 @@ export default function App() {
         </div>
       )}
 
-      {/* OTP VERIFICATION MODAL */}
+      {/* OTP VERIFICATION MODAL WITH COUNTDOWN TIMER */}
       {showOtpModal && (
         <div style={styles.modalOverlay}>
           <div style={styles.modalContent} className="modal-box">
-            <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#F5F2EA', marginBottom: '8px' }}>
-              🔒 Security Verification
-            </h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#F5F2EA', margin: 0 }}>
+                🔒 Security Verification
+              </h3>
+              <div style={styles.timerBadge}>
+                ⏱️ {formatTime(otpTimeLeft)}
+              </div>
+            </div>
+
             <p style={{ fontSize: '12px', color: '#9CA3AF', marginBottom: '16px', lineHeight: '1.5' }}>
               A 6-digit OTP has been sent to <strong>{sender || 'your sender email'}</strong>. Enter it below to authorize this email dispatch.
             </p>
@@ -370,7 +408,6 @@ export default function App() {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {/* 1-CLICK REEL DEMO AUTO-FILL BUTTON */}
             <button
               type="button"
               onClick={handleReelDemoFill}
@@ -625,6 +662,15 @@ const styles = {
     width: '90%',
     boxShadow: '0 20px 40px rgba(0,0,0,0.8)',
     animation: 'modalScale 0.25s ease-out forwards',
+  },
+  timerBadge: {
+    fontSize: '11px',
+    fontWeight: '700',
+    color: '#D6A967',
+    backgroundColor: 'rgba(214, 169, 103, 0.1)',
+    border: '1px solid rgba(214, 169, 103, 0.3)',
+    borderRadius: '12px',
+    padding: '3px 8px',
   },
   secondaryBtn: {
     width: '100%',
