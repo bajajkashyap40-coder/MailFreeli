@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-// SEPARATED FOOTER COMPONENT
+// SEPARATED FOOTER COMPONENT WITH PULSING STATUS DOT
 function Footer() {
   return (
     <footer style={styles.fullFooter}>
@@ -16,7 +16,7 @@ function Footer() {
         </div>
 
         <div style={styles.footerStatusGroup}>
-          <span style={styles.statusDot}></span>
+          <span className="pulse-dot" style={styles.statusDot}></span>
           <span>System Online</span>
         </div>
       </div>
@@ -79,6 +79,15 @@ export default function App() {
     }, 3000);
     return () => clearInterval(interval);
   }, []);
+
+  // 1-CLICK REEL DEMO AUTO-FILL FEATURE
+  const handleReelDemoFill = () => {
+    setSender('demo.agent@mailfreeli.ai');
+    setRecipient('alex.client@enterprise.com');
+    setMeetingLink('https://meet.google.com/abc-demo-xyz');
+    setPrompt('Draft a concise follow-up email requesting a 15-minute alignment sync tomorrow to review sprint progress.');
+    showToast('🎬 Reel Demo Mode: Sample data auto-filled!', 'success');
+  };
 
   const handleQuickSuggestion = (text) => setPrompt(text);
 
@@ -207,7 +216,7 @@ export default function App() {
         }
         * { box-sizing: border-box; }
         
-        input:focus, textarea:focus { border-color: #D6A967 !important; outline: none !important; }
+        input:focus, textarea:focus { border-color: #D6A967 !important; outline: none !important; box-shadow: 0 0 10px rgba(214, 169, 103, 0.2) !important; }
         
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #10141B; }
@@ -217,6 +226,38 @@ export default function App() {
         @keyframes dropDown {
           from { opacity: 0; transform: translate(-50%, -20px); }
           to { opacity: 1; transform: translate(-50%, 0); }
+        }
+
+        @keyframes modalScale {
+          from { opacity: 0; transform: scale(0.92); }
+          to { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes pulseGlow {
+          0% { box-shadow: 0 0 0 0 rgba(53, 208, 160, 0.7); }
+          70% { box-shadow: 0 0 0 8px rgba(53, 208, 160, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(53, 208, 160, 0); }
+        }
+
+        .pulse-dot {
+          animation: pulseGlow 2s infinite;
+        }
+
+        .glow-btn {
+          transition: all 0.3s ease !important;
+        }
+        .glow-btn:hover {
+          transform: translateY(-2px) !important;
+          box-shadow: 0 6px 20px rgba(214, 169, 103, 0.4) !important;
+        }
+
+        .hover-card {
+          transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease !important;
+        }
+        .hover-card:hover {
+          transform: translateY(-4px) !important;
+          border-color: rgba(214, 169, 103, 0.4) !important;
+          box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5) !important;
         }
 
         /* FLEXIBLE RESPONSIVE UI RULES */
@@ -304,6 +345,7 @@ export default function App() {
                 type="button"
                 onClick={handleVerifyAndDispatch}
                 disabled={verifyingOtp}
+                className="glow-btn"
                 style={{ ...styles.primaryBtn, marginTop: 0, opacity: verifyingOtp ? 0.6 : 1 }}
               >
                 {verifyingOtp ? 'Verifying...' : 'Verify & Send'}
@@ -313,7 +355,7 @@ export default function App() {
         </div>
       )}
 
-      {/* FULL-WIDTH HEADER */}
+      {/* FULL-WIDTH HEADER WITH REEL DEMO MODE BUTTON */}
       <header style={styles.fullHeader}>
         <div style={styles.headerInner}>
           <div style={styles.logoGroup}>
@@ -327,9 +369,21 @@ export default function App() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={styles.avatar}>U</div>
-            <span style={{ fontSize: '13px', color: '#F5F2EA', fontWeight: '500' }}>Hello, User</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {/* 1-CLICK REEL DEMO AUTO-FILL BUTTON */}
+            <button
+              type="button"
+              onClick={handleReelDemoFill}
+              style={styles.demoModeBtn}
+              title="Auto-fill sample data for demo video"
+            >
+              🎬 Demo Mode
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={styles.avatar}>U</div>
+              <span style={{ fontSize: '13px', color: '#F5F2EA', fontWeight: '500' }}>Hello, User</span>
+            </div>
           </div>
         </div>
       </header>
@@ -339,7 +393,7 @@ export default function App() {
         <div style={styles.gridTwoCol} className="cockpit-grid">
           
           {/* LEFT: AI COCKPIT */}
-          <section style={styles.card}>
+          <section style={styles.card} className="hover-card">
             <div>
               <h2 style={styles.cardTitle}>AI Dispatch Cockpit</h2>
               <p style={styles.cardSub}>Compose your email with AI assistance</p>
@@ -406,6 +460,7 @@ export default function App() {
               type="button"
               onClick={handleGenerateDraft}
               disabled={generating}
+              className="glow-btn"
               style={{ ...styles.primaryBtn, opacity: generating ? 0.6 : 1 }}
             >
               ✨ {generating ? 'Generating AI Draft...' : 'Generate AI Draft'}
@@ -413,7 +468,7 @@ export default function App() {
           </section>
 
           {/* RIGHT: EDITABLE DRAFT & PREVIEW */}
-          <section style={styles.card}>
+          <section style={styles.card} className="hover-card">
             <div>
               <h2 style={styles.cardTitle}>Editable Draft & Preview</h2>
               <p style={styles.cardSub}>Review and edit your AI-generated email</p>
@@ -461,6 +516,7 @@ export default function App() {
                 type="button"
                 onClick={handleInitiateDispatch}
                 disabled={dispatching || !body}
+                className="glow-btn"
                 style={{ ...styles.primaryBtn, opacity: dispatching || !body ? 0.5 : 1 }}
               >
                 🚀 {dispatching ? 'Sending OTP...' : 'Send Email via SMTP'}
@@ -476,7 +532,7 @@ export default function App() {
 
         {/* METRICS ROW */}
         <section style={styles.gridFourCol} className="kpi-grid">
-          <div style={styles.kpiCard}>
+          <div style={styles.kpiCard} className="hover-card">
             <div style={styles.kpiHeader}>
               <span style={styles.kpiLabel}>AI SUCCESS RATE</span>
               <span style={{ ...styles.badge, color: '#35D0A0', borderColor: 'rgba(53, 208, 160, 0.3)' }}>LIVE</span>
@@ -485,7 +541,7 @@ export default function App() {
             <div style={styles.kpiSub}>{stats.totalLogs} logs</div>
           </div>
 
-          <div style={styles.kpiCard}>
+          <div style={styles.kpiCard} className="hover-card">
             <div style={styles.kpiHeader}>
               <span style={styles.kpiLabel}>SMTP QUEUE</span>
               <span style={{ ...styles.badge, color: '#D6A967', borderColor: 'rgba(214, 169, 103, 0.3)' }}>READY</span>
@@ -494,7 +550,7 @@ export default function App() {
             <div style={styles.kpiSub}>0 Backlog</div>
           </div>
 
-          <div style={styles.kpiCard}>
+          <div style={styles.kpiCard} className="hover-card">
             <div style={styles.kpiHeader}>
               <span style={styles.kpiLabel}>AVG VELOCITY</span>
               <span style={{ ...styles.badge, color: '#8B7CF6', borderColor: 'rgba(139, 124, 246, 0.3)' }}>FAST</span>
@@ -503,7 +559,7 @@ export default function App() {
             <div style={styles.kpiSub}>Response</div>
           </div>
 
-          <div style={styles.kpiCard}>
+          <div style={styles.kpiCard} className="hover-card">
             <div style={styles.kpiHeader}>
               <span style={styles.kpiLabel}>TOTAL MAILS SENT</span>
               <span style={{ ...styles.badge, color: '#35D0A0', borderColor: 'rgba(53, 208, 160, 0.3)' }}>SYNCED</span>
@@ -553,21 +609,22 @@ const styles = {
     left: 0,
     width: '100vw',
     height: '100vh',
-    backgroundColor: 'rgba(9, 11, 15, 0.85)',
+    backgroundColor: 'rgba(9, 11, 15, 0.75)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 10000,
-    backdropFilter: 'blur(4px)',
+    backdropFilter: 'blur(8px)',
   },
   modalContent: {
-    backgroundColor: '#141922',
-    border: '1px solid #292E36',
+    backgroundColor: 'rgba(20, 25, 34, 0.95)',
+    border: '1px solid rgba(214, 169, 103, 0.3)',
     borderRadius: '16px',
     padding: '24px',
     maxWidth: '400px',
     width: '90%',
     boxShadow: '0 20px 40px rgba(0,0,0,0.8)',
+    animation: 'modalScale 0.25s ease-out forwards',
   },
   secondaryBtn: {
     width: '100%',
@@ -594,7 +651,8 @@ const styles = {
   fullHeader: {
     width: '100%',
     borderBottom: '1px solid #292E36',
-    backgroundColor: '#10141B',
+    backgroundColor: 'rgba(16, 20, 27, 0.9)',
+    backdropFilter: 'blur(10px)',
     position: 'sticky',
     top: 0,
     zIndex: 100,
@@ -621,6 +679,7 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     fontSize: '18px',
+    boxShadow: '0 4px 12px rgba(214, 169, 103, 0.3)',
   },
   enterprisePill: {
     fontSize: '10px',
@@ -631,6 +690,17 @@ const styles = {
     padding: '2px 8px',
     borderRadius: '12px',
     textTransform: 'uppercase',
+  },
+  demoModeBtn: {
+    backgroundColor: 'rgba(214, 169, 103, 0.15)',
+    border: '1px solid #D6A967',
+    borderRadius: '20px',
+    color: '#D6A967',
+    padding: '6px 12px',
+    fontSize: '12px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
   },
   avatar: {
     width: '32px',
@@ -661,7 +731,7 @@ const styles = {
     gap: '20px',
   },
   card: {
-    backgroundColor: '#141922',
+    backgroundColor: 'rgba(20, 25, 34, 0.85)',
     border: '1px solid #292E36',
     borderRadius: '16px',
     padding: '20px',
@@ -669,6 +739,7 @@ const styles = {
     flexDirection: 'column',
     justifyContent: 'space-between',
     minHeight: '480px',
+    backdropFilter: 'blur(12px)',
   },
   cardTitle: { fontSize: '18px', fontWeight: '700', color: '#F5F2EA' },
   cardSub: { fontSize: '12px', color: '#9CA3AF', marginTop: '2px', marginBottom: '16px' },
@@ -682,6 +753,7 @@ const styles = {
     color: '#F5F2EA',
     fontSize: '13px',
     width: '100%',
+    transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
   },
   textarea: {
     backgroundColor: '#10141B',
@@ -692,6 +764,7 @@ const styles = {
     fontSize: '13px',
     width: '100%',
     resize: 'none',
+    transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
   },
   pillBtn: {
     backgroundColor: '#10141B',
@@ -701,6 +774,7 @@ const styles = {
     padding: '5px 10px',
     fontSize: '11px',
     cursor: 'pointer',
+    transition: 'border-color 0.2s ease',
   },
   primaryBtn: {
     width: '100%',
@@ -766,10 +840,11 @@ const styles = {
     gap: '16px',
   },
   kpiCard: {
-    backgroundColor: '#141922',
+    backgroundColor: 'rgba(20, 25, 34, 0.85)',
     border: '1px solid #292E36',
     borderRadius: '16px',
     padding: '16px',
+    backdropFilter: 'blur(12px)',
   },
   kpiHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
   kpiLabel: { fontSize: '11px', color: '#9CA3AF', fontWeight: '600' },
@@ -785,7 +860,8 @@ const styles = {
   fullFooter: {
     width: '100%',
     borderTop: '1px solid #292E36',
-    backgroundColor: '#10141B',
+    backgroundColor: 'rgba(16, 20, 27, 0.9)',
+    backdropFilter: 'blur(10px)',
     marginTop: 'auto',
   },
   footerInner: {
