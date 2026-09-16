@@ -3,7 +3,7 @@ import confetti from 'canvas-confetti';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-// SEPARATED FOOTER COMPONENT WITH FLEXIBLE RESPONSIVE LAYOUT
+// SEPARATED FOOTER COMPONENT WITH SPACED ELEMENTS & FLEXIBLE LAYOUT
 function Footer() {
   return (
     <footer style={styles.fullFooter}>
@@ -916,7 +916,7 @@ const styles = {
     backgroundColor: 'rgba(16, 20, 27, 0.9)',
     backdropFilter: 'blur(10px)',
     marginTop: 'auto',
-    padding: '12px 0',
+    padding: '16px 0',
   },
   footerInner: {
     maxWidth: '1280px',
@@ -927,25 +927,26 @@ const styles = {
     justify: 'space-between',
     alignItems: 'center',
     flexWrap: 'wrap',
-    gap: '16px',
+    gap: '20px',
     fontSize: '12px',
     color: '#9CA3AF',
   },
   footerBrandGroup: {
     display: 'flex',
-    gap: '14px',
+    gap: '16px',
     flexWrap: 'wrap',
     alignItems: 'center',
   },
   dotSeparator: {
     color: '#292E36',
     fontSize: '14px',
+    padding: '0 6px',
   },
   footerStatusGroup: {
     color: '#35D0A0',
     display: 'flex',
     alignItems: 'center',
-    gap: '8px',
+    gap: '10px',
     fontWeight: '500',
   },
   statusDot: {
