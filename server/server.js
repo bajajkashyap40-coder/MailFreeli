@@ -9,7 +9,13 @@ import Email from './models/Email.js';
 dotenv.config();
 
 const app = express();
-app.use(cors());
+
+// Configured CORS for production cross-origin requests
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
 // In-memory OTP Store: { "target_sender_email": { otp: "123456", expiresAt: timestamp } }
@@ -73,9 +79,13 @@ app.get('/', (req, res) => {
 });
 
 // 1. Connect to MongoDB Atlas
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB connected successfully'))
-  .catch((err) => console.error('MongoDB Connection Error:', err));
+if (process.env.MONGO_URI) {
+  mongoose.connect(process.env.MONGO_URI)
+    .then(() => console.log('MongoDB connected successfully'))
+    .catch((err) => console.error('MongoDB Connection Error:', err));
+} else {
+  console.warn('MONGO_URI is missing from environment variables!');
+}
 
 // 2. Initialize Groq AI Client
 const groq = new Groq({ 
@@ -335,4 +345,4 @@ app.post('/api/verify-and-dispatch', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
