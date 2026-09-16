@@ -3,7 +3,7 @@ import confetti from 'canvas-confetti';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-// SEPARATED FOOTER COMPONENT WITH MAXIMUM ELEMENT SPACING
+// SEPARATED FOOTER COMPONENT WITH ADAPTIVE RESPONSIVE LAYOUT
 function Footer() {
   return (
     <footer style={styles.fullFooter}>
@@ -300,29 +300,44 @@ export default function App() {
         }
 
         @media (max-width: 640px) {
+          .header-inner {
+            padding: 0 12px !important;
+            height: auto !important;
+            padding-top: 12px !important;
+            padding-bottom: 12px !important;
+          }
+          .demo-btn-text {
+            display: none !important;
+          }
           .main-layout {
-            padding: 16px 14px !important;
+            padding: 16px 12px !important;
             gap: 16px !important;
           }
           .kpi-grid {
             grid-template-columns: repeat(2, 1fr) !important;
-            gap: 12px !important;
+            gap: 10px !important;
           }
           .modal-box {
             width: 92% !important;
             padding: 20px 16px !important;
           }
+
+          /* CRITICAL MOBILE FOOTER STACK FIX */
           .footer-inner {
             flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
             text-align: center !important;
-            gap: 16px !important;
+            gap: 12px !important;
+            padding: 16px 12px !important;
           }
           .footer-brand-group {
-            justify-content: center !important;
-            gap: 14px !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            gap: 6px !important;
           }
           .footer-dot {
-            display: inline-block !important;
+            display: none !important;
           }
         }
 
@@ -330,7 +345,7 @@ export default function App() {
           .kpi-grid {
             grid-template-columns: 1fr !important;
           }
-          .header-title-sub {
+          .header-title-sub, .user-name-text {
             display: none !important;
           }
         }
@@ -400,9 +415,9 @@ export default function App() {
         </div>
       )}
 
-      {/* FULL-WIDTH HEADER WITH REEL DEMO MODE BUTTON */}
+      {/* FULL-WIDTH HEADER WITH ADAPTIVE RESPONSIVE ACTION BUTTONS */}
       <header style={styles.fullHeader}>
-        <div style={styles.headerInner}>
+        <div style={styles.headerInner} className="header-inner">
           <div style={styles.logoGroup}>
             <div style={styles.logoBadge}>M</div>
             <div>
@@ -414,19 +429,19 @@ export default function App() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <button
               type="button"
               onClick={handleReelDemoFill}
               style={styles.demoModeBtn}
               title="Auto-fill sample data for demo video"
             >
-              🎬 Demo Mode
+              🎬 <span className="demo-btn-text">Demo Mode</span>
             </button>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <div style={styles.avatar}>U</div>
-              <span style={{ fontSize: '13px', color: '#F5F2EA', fontWeight: '500' }}>Hello, User</span>
+              <span style={{ fontSize: '13px', color: '#F5F2EA', fontWeight: '500' }} className="user-name-text">Hello, User</span>
             </div>
           </div>
         </div>
