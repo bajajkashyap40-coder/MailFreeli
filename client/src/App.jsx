@@ -3,16 +3,16 @@ import confetti from 'canvas-confetti';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-// SEPARATED FOOTER COMPONENT
+// SEPARATED FOOTER COMPONENT WITH FLEXIBLE RESPONSIVE LAYOUT
 function Footer() {
   return (
     <footer style={styles.fullFooter}>
       <div style={styles.footerInner} className="footer-inner">
-        <div style={styles.footerBrandGroup}>
+        <div style={styles.footerBrandGroup} className="footer-brand-group">
           <span style={{ color: '#F5F2EA', fontWeight: '600' }}>© 2026 MailFreeli</span>
-          <span style={{ color: '#292E36' }}>•</span>
+          <span style={styles.dotSeparator} className="footer-dot">•</span>
           <span>Built for smarter communication</span>
-          <span style={{ color: '#292E36' }}>•</span>
+          <span style={styles.dotSeparator} className="footer-dot">•</span>
           <span>Powered by AI</span>
         </div>
 
@@ -315,7 +315,14 @@ export default function App() {
           .footer-inner {
             flex-direction: column !important;
             text-align: center !important;
+            gap: 12px !important;
+          }
+          .footer-brand-group {
+            justify-content: center !important;
             gap: 10px !important;
+          }
+          .footer-dot {
+            display: none !important;
           }
         }
 
@@ -909,25 +916,30 @@ const styles = {
     backgroundColor: 'rgba(16, 20, 27, 0.9)',
     backdropFilter: 'blur(10px)',
     marginTop: 'auto',
+    padding: '12px 0',
   },
   footerInner: {
     maxWidth: '1280px',
     width: '100%',
     margin: '0 auto',
-    padding: '18px 20px',
+    padding: '0 24px',
     display: 'flex',
     justify: 'space-between',
     alignItems: 'center',
     flexWrap: 'wrap',
-    gap: '12px',
+    gap: '16px',
     fontSize: '12px',
     color: '#9CA3AF',
   },
   footerBrandGroup: {
     display: 'flex',
-    gap: '8px',
+    gap: '14px',
     flexWrap: 'wrap',
     alignItems: 'center',
+  },
+  dotSeparator: {
+    color: '#292E36',
+    fontSize: '14px',
   },
   footerStatusGroup: {
     color: '#35D0A0',
