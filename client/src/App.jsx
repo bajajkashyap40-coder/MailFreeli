@@ -3,7 +3,7 @@ import confetti from 'canvas-confetti';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-// SEPARATED FOOTER COMPONENT WITH SPACED ELEMENTS & FLEXIBLE LAYOUT
+// SEPARATED FOOTER COMPONENT WITH MAXIMUM ELEMENT SPACING
 function Footer() {
   return (
     <footer style={styles.fullFooter}>
@@ -315,14 +315,14 @@ export default function App() {
           .footer-inner {
             flex-direction: column !important;
             text-align: center !important;
-            gap: 12px !important;
+            gap: 16px !important;
           }
           .footer-brand-group {
             justify-content: center !important;
-            gap: 10px !important;
+            gap: 14px !important;
           }
           .footer-dot {
-            display: none !important;
+            display: inline-block !important;
           }
         }
 
@@ -916,37 +916,37 @@ const styles = {
     backgroundColor: 'rgba(16, 20, 27, 0.9)',
     backdropFilter: 'blur(10px)',
     marginTop: 'auto',
-    padding: '16px 0',
+    padding: '20px 0',
   },
   footerInner: {
     maxWidth: '1280px',
     width: '100%',
     margin: '0 auto',
-    padding: '0 24px',
+    padding: '0 32px',
     display: 'flex',
     justify: 'space-between',
     alignItems: 'center',
     flexWrap: 'wrap',
-    gap: '20px',
+    gap: '28px',
     fontSize: '12px',
     color: '#9CA3AF',
   },
   footerBrandGroup: {
     display: 'flex',
-    gap: '16px',
+    gap: '24px',
     flexWrap: 'wrap',
     alignItems: 'center',
   },
   dotSeparator: {
     color: '#292E36',
     fontSize: '14px',
-    padding: '0 6px',
+    padding: '0 12px',
   },
   footerStatusGroup: {
     color: '#35D0A0',
     display: 'flex',
     alignItems: 'center',
-    gap: '10px',
+    gap: '12px',
     fontWeight: '500',
   },
   statusDot: {
