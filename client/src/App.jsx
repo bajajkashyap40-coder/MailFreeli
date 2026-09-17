@@ -30,6 +30,7 @@ export default function App() {
   const [recipient, setRecipient] = useState('');
   const [prompt, setPrompt] = useState('');
   const [meetingLink, setMeetingLink] = useState('');
+  const [signOff, setSignOff] = useState('Alex Johnson | Lead Engineer'); // SIGN-OFF DETAILS STATE
 
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
@@ -113,6 +114,7 @@ export default function App() {
     setRecipient('alex.client@enterprise.com');
     setMeetingLink('https://meet.google.com/abc-demo-xyz');
     setPrompt('Draft a concise follow-up email requesting a 15-minute alignment sync tomorrow to review sprint progress.');
+    setSignOff('Alex Johnson | Lead Engineer, MailFreeli');
     showToast('🎬 Reel Demo Mode: Sample data auto-filled!', 'success');
   };
 
@@ -131,7 +133,7 @@ export default function App() {
       const response = await fetch(`${API_BASE_URL}/api/generate-draft`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ recipient, prompt, meetingLink }),
+        body: JSON.stringify({ recipient, prompt, meetingLink, signOff }),
       });
 
       const data = await response.json();
@@ -322,7 +324,6 @@ export default function App() {
             padding: 20px 16px !important;
           }
 
-          /* CRITICAL MOBILE FOOTER STACK FIX */
           .footer-inner {
             flex-direction: column !important;
             align-items: center !important;
@@ -415,7 +416,7 @@ export default function App() {
         </div>
       )}
 
-      {/* FULL-WIDTH HEADER WITH ADAPTIVE RESPONSIVE ACTION BUTTONS */}
+      {/* FULL-WIDTH HEADER */}
       <header style={styles.fullHeader}>
         <div style={styles.headerInner} className="header-inner">
           <div style={styles.logoGroup}>
@@ -492,6 +493,16 @@ export default function App() {
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   style={styles.textarea}
+                />
+
+                {/* DETAILS BELOW REGARDS PLACEHOLDER */}
+                <label style={styles.label}>NAME / DETAILS BELOW REGARDS (OPTIONAL)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Alex Johnson | Lead Engineer"
+                  value={signOff}
+                  onChange={(e) => setSignOff(e.target.value)}
+                  style={styles.input}
                 />
 
                 <label style={{ ...styles.label, marginBottom: '4px' }}>QUICK SUGGESTIONS</label>

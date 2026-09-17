@@ -150,7 +150,7 @@ app.get('/api/stats', async (req, res) => {
   }
 });
 
-// 4. STEP 1: AI Email Draft Generation (WITH SIGN-OFF SUPPORT)
+// 4. STEP 1: AI Email Draft Generation (WITH DIRECT BELOW REGARDS SIGN-OFF)
 app.post('/api/generate-draft', async (req, res) => {
   const { recipient, prompt, meetingLink, signOff } = req.body;
 
@@ -163,8 +163,8 @@ app.post('/api/generate-draft', async (req, res) => {
     : 'If a meeting or calendar link is needed, use the exact placeholder tag: "<YOUR_CALENDAR_LINK_HERE>". NEVER invent fake URLs.';
 
   const signOffInstruction = signOff 
-    ? `End the email body cleanly with this exact sign-off / signature:\n"${signOff}"` 
-    : 'End the email with a professional sign-off such as "Best regards,\n[Your Name]".';
+    ? `End the email body cleanly with "Best regards," followed on the next line by: "${signOff}".` 
+    : 'End the email body cleanly with "Best regards," followed on the next line by "[Sender Name]".';
 
   let rawContent = '';
   let selectedModel = '';
