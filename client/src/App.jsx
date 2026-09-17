@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
+import logoImg from './logo.png'; // DIRECT IMPORT FROM ROOT SRC
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -30,7 +31,7 @@ export default function App() {
   const [recipient, setRecipient] = useState('');
   const [prompt, setPrompt] = useState('');
   const [meetingLink, setMeetingLink] = useState('');
-  const [signOff, setSignOff] = useState('Alex Johnson | Lead Engineer'); // SIGN-OFF DETAILS STATE
+  const [signOff, setSignOff] = useState('Alex Johnson | Lead Engineer');
 
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
@@ -171,7 +172,7 @@ export default function App() {
       const data = await response.json();
 
       if (response.ok) {
-        setOtpTimeLeft(300); // Reset to 5 mins
+        setOtpTimeLeft(300);
         setShowOtpModal(true);
         showToast(data.message || 'OTP sent! Check your sender inbox.', 'success');
       } else {
@@ -212,7 +213,7 @@ export default function App() {
         setIsDispatched(true);
         setShowOtpModal(false);
         setOtpInput('');
-        triggerConfetti(); // TRIGGER CONFETTI ON DISPATCH
+        triggerConfetti();
         showToast('OTP verified & email dispatched successfully!', 'success');
         fetchStats();
       } else {
@@ -416,17 +417,15 @@ export default function App() {
         </div>
       )}
 
-      {/* FULL-WIDTH HEADER WITH TRANSPARENT EMBEDDED LOGO */}
+      {/* FULL-WIDTH HEADER */}
       <header style={styles.fullHeader}>
         <div style={styles.headerInner} className="header-inner">
           <div style={styles.logoGroup}>
-            <div style={styles.logoWrapper}>
-              <img 
-                src="/logo.png" 
-                alt="MailFreeli Logo" 
-                style={styles.logoImage} 
-              />
-            </div>
+            <img 
+              src={logoImg} 
+              alt="MailFreeli Logo" 
+              style={styles.logoImage} 
+            />
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ fontWeight: '700', fontSize: '16px', color: '#F5F2EA' }}>MailFreeli</span>
@@ -753,24 +752,11 @@ const styles = {
     justifyContent: 'space-between',
   },
   logoGroup: { display: 'flex', alignItems: 'center', gap: '12px' },
-  logoWrapper: {
+  logoImage: {
     width: '38px',
     height: '38px',
-    borderRadius: '10px',
-    backgroundColor: '#090B0F',
-    border: '1px solid #292E36',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-    padding: '2px',
-  },
-  logoImage: {
-    width: '100%',
-    height: '100%',
     objectFit: 'contain',
-    mixBlendMode: 'multiply',
-    filter: 'contrast(120%) brightness(110%)',
+    borderRadius: '8px',
   },
   enterprisePill: {
     fontSize: '10px',
