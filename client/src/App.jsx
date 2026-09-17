@@ -4,18 +4,24 @@ import logoImg from './logo.png'; // Direct import from src directory
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
+// SEPARATED FOOTER COMPONENT WITH BALANCED PC LAYOUT
 function Footer() {
   return (
     <footer style={styles.fullFooter}>
       <div style={styles.footerInner} className="footer-inner">
-        <div style={styles.footerBrandGroup} className="footer-brand-group">
-          <span style={{ color: '#F5F2EA', fontWeight: '600' }}>© 2026 MailFreeli</span>
-          <span style={styles.dotSeparator} className="footer-dot">•</span>
+        {/* LEFT: BRAND */}
+        <div style={styles.footerBrandGroup}>
+          <span style={{ color: '#F5F2EA', fontWeight: '700', fontSize: '13px' }}>© 2026 MailFreeli</span>
+        </div>
+
+        {/* CENTER: DESKTOP DETAILS */}
+        <div style={styles.footerLinksGroup} className="footer-links-group">
           <span>Built for smarter communication</span>
-          <span style={styles.dotSeparator} className="footer-dot">•</span>
+          <span style={styles.dotSeparator}>•</span>
           <span>Powered by AI</span>
         </div>
 
+        {/* RIGHT: LIVE SYSTEM STATUS BADGE */}
         <div style={styles.footerStatusGroup}>
           <span className="pulse-dot" style={styles.statusDot}></span>
           <span>System Online</span>
@@ -326,9 +332,8 @@ export default function App() {
             gap: 12px !important;
             padding: 16px 12px !important;
           }
-          .footer-brand-group {
+          .footer-links-group {
             flex-direction: column !important;
-            align-items: center !important;
             gap: 6px !important;
           }
           .footer-dot {
@@ -923,45 +928,52 @@ const styles = {
   fullFooter: {
     width: '100%',
     borderTop: '1px solid #292E36',
-    backgroundColor: 'rgba(16, 20, 27, 0.9)',
+    backgroundColor: 'rgba(16, 20, 27, 0.95)',
     backdropFilter: 'blur(10px)',
     marginTop: 'auto',
-    padding: '20px 0',
+    padding: '16px 0',
   },
   footerInner: {
     maxWidth: '1280px',
     width: '100%',
     margin: '0 auto',
-    padding: '0 32px',
+    padding: '0 24px',
     display: 'flex',
-    justify: 'space-between',
     alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: '28px',
+    justifyContent: 'space-between',
     fontSize: '12px',
     color: '#9CA3AF',
   },
   footerBrandGroup: {
     display: 'flex',
-    gap: '24px',
-    flexWrap: 'wrap',
     alignItems: 'center',
   },
-  dotSeparator: {
-    color: '#292E36',
-    fontSize: '14px',
-    padding: '0 12px',
-  },
-  footerStatusGroup: {
-    color: '#35D0A0',
+  footerLinksGroup: {
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
-    fontWeight: '500',
+    color: '#9CA3AF',
+    fontSize: '12px',
+  },
+  dotSeparator: {
+    color: '#3A4250',
+    fontSize: '12px',
+  },
+  footerStatusGroup: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    backgroundColor: 'rgba(53, 208, 160, 0.1)',
+    border: '1px solid rgba(53, 208, 160, 0.25)',
+    padding: '5px 12px',
+    borderRadius: '20px',
+    color: '#35D0A0',
+    fontWeight: '600',
+    fontSize: '11px',
   },
   statusDot: {
-    width: '8px',
-    height: '8px',
+    width: '7px',
+    height: '7px',
     borderRadius: '50%',
     backgroundColor: '#35D0A0',
     display: 'inline-block',
