@@ -416,11 +416,17 @@ export default function App() {
         </div>
       )}
 
-      {/* FULL-WIDTH HEADER */}
+      {/* FULL-WIDTH HEADER WITH TRANSPARENT EMBEDDED LOGO */}
       <header style={styles.fullHeader}>
         <div style={styles.headerInner} className="header-inner">
           <div style={styles.logoGroup}>
-            <div style={styles.logoBadge}>M</div>
+            <div style={styles.logoWrapper}>
+              <img 
+                src="/logo.png" 
+                alt="MailFreeli Logo" 
+                style={styles.logoImage} 
+              />
+            </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ fontWeight: '700', fontSize: '16px', color: '#F5F2EA' }}>MailFreeli</span>
@@ -747,18 +753,24 @@ const styles = {
     justifyContent: 'space-between',
   },
   logoGroup: { display: 'flex', alignItems: 'center', gap: '12px' },
-  logoBadge: {
-    width: '36px',
-    height: '36px',
+  logoWrapper: {
+    width: '38px',
+    height: '38px',
     borderRadius: '10px',
-    background: 'linear-gradient(135deg, #D6A967, #B88A48)',
-    color: '#090B0F',
-    fontWeight: 'bold',
+    backgroundColor: '#090B0F',
+    border: '1px solid #292E36',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '18px',
-    boxShadow: '0 4px 12px rgba(214, 169, 103, 0.3)',
+    overflow: 'hidden',
+    padding: '2px',
+  },
+  logoImage: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'contain',
+    mixBlendMode: 'multiply',
+    filter: 'contrast(120%) brightness(110%)',
   },
   enterprisePill: {
     fontSize: '10px',
