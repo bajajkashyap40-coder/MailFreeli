@@ -73,7 +73,7 @@ ${body}
   </div>
 `;
 
-// Root Health Check Endpoint (Fixes "Cannot GET /" on Render)
+// Root Health Check Endpoint
 app.get('/', (req, res) => {
   res.status(200).json({ status: 'Online', message: 'MailFreeli API Engine Running' });
 });
@@ -150,17 +150,21 @@ app.get('/api/stats', async (req, res) => {
   }
 });
 
-// 4. STEP 1: AI Email Draft Generation
+// 4. STEP 1: AI Email Draft Generation (WITH SIGN-OFF SUPPORT)
 app.post('/api/generate-draft', async (req, res) => {
-  const { recipient, prompt, meetingLink } = req.body;
+  const { recipient, prompt, meetingLink, signOff } = req.body;
 
   if (!recipient || !prompt) {
     return res.status(400).json({ error: 'Recipient and prompt are required.' });
   }
 
   const linkInstruction = meetingLink 
-    ? `Use this exact meeting link in the email: "${meetingLink}".` 
+    ? `Use this exact meeting link in the email body: "${meetingLink}".` 
     : 'If a meeting or calendar link is needed, use the exact placeholder tag: "<YOUR_CALENDAR_LINK_HERE>". NEVER invent fake URLs.';
+
+  const signOffInstruction = signOff 
+    ? `End the email body cleanly with this exact sign-off / signature:\n"${signOff}"` 
+    : 'End the email with a professional sign-off such as "Best regards,\n[Your Name]".';
 
   let rawContent = '';
   let selectedModel = '';
@@ -177,7 +181,8 @@ app.post('/api/generate-draft', async (req, res) => {
             content: `You are an elite email generator. Return ONLY a valid JSON object with two keys: "subject" and "body".
 Rules:
 1. Do not invent fake links, URLs, or domains.
-2. ${linkInstruction}`,
+2. ${linkInstruction}
+3. ${signOffInstruction}`,
           },
           {
             role: 'user',
