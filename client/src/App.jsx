@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import logoImg from './logo.png'; // DIRECT IMPORT FROM ROOT SRC
+import logoImg from './logo.png'; // Direct import from src directory
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-// SEPARATED FOOTER COMPONENT WITH ADAPTIVE RESPONSIVE LAYOUT
 function Footer() {
   return (
     <footer style={styles.fullFooter}>
@@ -40,15 +39,11 @@ export default function App() {
   const [generating, setGenerating] = useState(false);
   const [dispatching, setDispatching] = useState(false);
 
-  // OTP Verification States
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [otpInput, setOtpInput] = useState('');
   const [verifyingOtp, setVerifyingOtp] = useState(false);
 
-  // OTP Countdown Timer (300 seconds = 5 mins)
   const [otpTimeLeft, setOtpTimeLeft] = useState(300);
-
-  // Mid-Top Alert State
   const [toast, setToast] = useState(null);
 
   const [stats, setStats] = useState({
@@ -86,7 +81,6 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // OTP Countdown Timer Logic
   useEffect(() => {
     let timer;
     if (showOtpModal && otpTimeLeft > 0) {
@@ -100,7 +94,6 @@ export default function App() {
     return () => clearInterval(timer);
   }, [showOtpModal, otpTimeLeft]);
 
-  // CONFETTI BURST ANIMATION
   const triggerConfetti = () => {
     confetti({
       particleCount: 100,
@@ -353,7 +346,6 @@ export default function App() {
         }
       `}</style>
 
-      {/* MID-TOP POPUP ALERT */}
       {toast && (
         <div style={styles.midTopAlert}>
           <div style={{
@@ -369,7 +361,6 @@ export default function App() {
         </div>
       )}
 
-      {/* OTP VERIFICATION MODAL WITH COUNTDOWN TIMER */}
       {showOtpModal && (
         <div style={styles.modalOverlay}>
           <div style={styles.modalContent} className="modal-box">
@@ -457,7 +448,6 @@ export default function App() {
       <main style={styles.main} className="main-layout">
         <div style={styles.gridTwoCol} className="cockpit-grid">
           
-          {/* LEFT: AI COCKPIT */}
           <section style={styles.card} className="hover-card">
             <div>
               <h2 style={styles.cardTitle}>AI Dispatch Cockpit</h2>
@@ -500,7 +490,6 @@ export default function App() {
                   style={styles.textarea}
                 />
 
-                {/* DETAILS BELOW REGARDS PLACEHOLDER */}
                 <label style={styles.label}>NAME / DETAILS BELOW REGARDS (OPTIONAL)</label>
                 <input
                   type="text"
@@ -542,7 +531,6 @@ export default function App() {
             </button>
           </section>
 
-          {/* RIGHT: EDITABLE DRAFT & PREVIEW */}
           <section style={styles.card} className="hover-card">
             <div>
               <h2 style={styles.cardTitle}>Editable Draft & Preview</h2>
@@ -605,7 +593,6 @@ export default function App() {
 
         </div>
 
-        {/* METRICS ROW */}
         <section style={styles.gridFourCol} className="kpi-grid">
           <div style={styles.kpiCard} className="hover-card">
             <div style={styles.kpiHeader}>
@@ -646,7 +633,6 @@ export default function App() {
 
       </main>
 
-      {/* SEPARATED FOOTER COMPONENT */}
       <Footer />
     </div>
   );
