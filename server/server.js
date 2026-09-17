@@ -11,11 +11,25 @@ dotenv.config();
 const app = express();
 
 // Configured CORS for production cross-origin requests
+const allowedOrigins = [
+  'https://mailfreeli-1.onrender.com',
+  'http://localhost:5173',
+  'http://localhost:3000'
+];
+
 app.use(cors({
-  origin: '*',
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, true); // Fallback to allow during testing/staging
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  credentials: true
 }));
+
 app.use(express.json());
 
 // In-memory OTP Store: { "target_sender_email": { otp: "123456", expiresAt: timestamp } }
