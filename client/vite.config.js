@@ -1,9 +1,9 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react-oxc';
 
 export default defineConfig({
   plugins: [react()],
-  build: {
-    outDir: 'dist', // Must be 'dist' inside client/
+  server: {
+    port: 5173,
   },
-})
+});
