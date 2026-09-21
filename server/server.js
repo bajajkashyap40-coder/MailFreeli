@@ -140,6 +140,23 @@ async function getValidModel() {
   }
 }
 
+// Helper: Reusable Nodemailer Transporter
+const createTransporter = () => {
+  return nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false, 
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+    tls: { rejectUnauthorized: false },
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 15000,
+  });
+};
+
 // 3. Dynamic Dashboard Stats Endpoint
 app.get('/api/stats', async (req, res) => {
   try {
@@ -164,7 +181,7 @@ app.get('/api/stats', async (req, res) => {
   }
 });
 
-// 4. STEP 1: AI Email Draft Generation (WITH DIRECT BELOW REGARDS SIGN-OFF)
+// 4. STEP 1: AI Email Draft Generation
 app.post('/api/generate-draft', async (req, res) => {
   const { recipient, prompt, meetingLink, signOff } = req.body;
 
@@ -235,7 +252,7 @@ Rules:
   res.status(200).json({ subject, body });
 });
 
-// 5. STEP 2: Send Welcome + Verification OTP Email (HTML Template)
+// 5. STEP 2: Send Welcome + Verification OTP Email
 app.post('/api/send-otp', async (req, res) => {
   const { sender } = req.body;
   const targetSenderEmail = sender || process.env.EMAIL_USER;
@@ -250,19 +267,7 @@ app.post('/api/send-otp', async (req, res) => {
   otpStore.set(targetSenderEmail, { otp, expiresAt });
 
   try {
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false, 
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-      tls: { rejectUnauthorized: false },
-      connectionTimeout: 15000,
-      greetingTimeout: 15000,
-      socketTimeout: 15000,
-    });
+    const transporter = createTransporter();
 
     await transporter.sendMail({
       from: `"MailFreeli Security" <${process.env.EMAIL_USER}>`,
@@ -279,7 +284,7 @@ app.post('/api/send-otp', async (req, res) => {
   }
 });
 
-// 6. STEP 3: Verify OTP and Dispatch Styled Email
+// 6. STEP 3: Verify OTP and Dispatch Single Styled Email
 app.post('/api/verify-and-dispatch', async (req, res) => {
   const { otp, sender, recipient, prompt, subject, body } = req.body;
 
@@ -303,23 +308,10 @@ app.post('/api/verify-and-dispatch', async (req, res) => {
     return res.status(400).json({ error: 'Invalid OTP entered. Please try again.' });
   }
 
-  // Clear valid OTP
   otpStore.delete(targetSenderEmail);
 
   try {
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false, 
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-      tls: { rejectUnauthorized: false },
-      connectionTimeout: 15000,
-      greetingTimeout: 15000,
-      socketTimeout: 15000,
-    });
+    const transporter = createTransporter();
 
     await transporter.sendMail({
       from: `"${targetSenderEmail}" <${process.env.EMAIL_USER}>`,
@@ -361,6 +353,105 @@ app.post('/api/verify-and-dispatch', async (req, res) => {
 
     res.status(500).json({ error: error.message || 'Failed to dispatch email.' });
   }
+});
+
+// 7. NEW STEP 4: BULK DISPATCH ENGINE ENDPOINT (Rate-limited CSV Batch Sending)
+app.post('/api/emails/bulk-send', async (req, res) => {
+  const { recipients, subject, templatePrompt } = req.body;
+
+  if (!recipients || !Array.isArray(recipients) || recipients.length === 0) {
+    return res.status(400).json({ error: 'Valid recipients list is required.' });
+  }
+
+  if (!subject) {
+    return res.status(400).json({ error: 'Email subject is required.' });
+  }
+
+  console.log(`[BULK BATCH STARTED] Processing ${recipients.length} recipients...`);
+  const transporter = createTransporter();
+  const senderEmail = process.env.EMAIL_USER;
+  const results = [];
+
+  for (const recipientObj of recipients) {
+    const { email, name } = recipientObj;
+    let finalBody = `Hi ${name || 'there'},\n\nHope this email finds you well.`;
+
+    // 1. Generate AI Personalized Body if prompt provided
+    if (templatePrompt) {
+      try {
+        const model = await getValidModel();
+        const formattedPrompt = templatePrompt.replace(/{{name}}/g, name || 'there');
+
+        const completion = await groq.chat.completions.create({
+          messages: [
+            {
+              role: 'system',
+              content: 'You are an email assistant. Write a short, friendly 2-3 sentence personalized email body. Do not include subject lines or greetings headers.',
+            },
+            {
+              role: 'user',
+              content: formattedPrompt,
+            },
+          ],
+          model: model,
+        });
+
+        const aiBody = completion.choices[0]?.message?.content?.trim();
+        if (aiBody) finalBody = aiBody;
+      } catch (aiErr) {
+        console.warn(`[AI WARN] AI generation failed for ${email}, using default template:`, aiErr.message);
+      }
+    }
+
+    // 2. Dispatch Email via SMTP
+    try {
+      await transporter.sendMail({
+        from: `"MailFreeli Bulk" <${senderEmail}>`,
+        to: email,
+        subject: subject,
+        html: generateDispatchHtml(subject, finalBody, senderEmail),
+      });
+
+      results.push({ email, status: 'SENT' });
+      console.log(`[BULK SENT] Delivered to ${email}`);
+
+      // Log to MongoDB
+      try {
+        await Email.create({
+          sender: senderEmail,
+          recipient: email,
+          prompt: templatePrompt || 'Bulk Dispatch',
+          subject,
+          body: finalBody,
+          status: 'SENT',
+        });
+      } catch (dbErr) {
+        console.warn('DB Log failed for bulk email:', dbErr.message);
+      }
+    } catch (sendErr) {
+      console.error(`[BULK ERROR] Failed sending to ${email}:`, sendErr.message);
+      results.push({ email, status: 'FAILED' });
+
+      try {
+        await Email.create({
+          sender: senderEmail,
+          recipient: email,
+          prompt: templatePrompt || 'Bulk Dispatch',
+          subject,
+          body: finalBody,
+          status: 'FAILED',
+        });
+      } catch (dbErr) {
+        console.error('DB Log failed for bulk error:', dbErr.message);
+      }
+    }
+
+    // 3. Rate-Limiting Delay (2 seconds between emails to maintain SMTP health)
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  }
+
+  console.log(`[BULK BATCH COMPLETED] Processed ${results.length} contacts.`);
+  return res.status(200).json({ success: true, results });
 });
 
 const PORT = process.env.PORT || 5000;
