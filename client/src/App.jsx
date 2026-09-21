@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import logoImg from './logo.png'; // Direct import from src directory
+import logoImg from './logo.png';
+import BulkEmail from './components/BulkEmail';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-// SEPARATED FOOTER COMPONENT WITH BALANCED PC LAYOUT
 function Footer() {
   return (
     <footer style={styles.fullFooter}>
@@ -32,6 +32,9 @@ function Footer() {
 }
 
 export default function App() {
+  const [activeTab, setActiveTab] = useState('single'); // 'single' or 'bulk'
+
+  // Single Mail Cockpit States
   const [sender, setSender] = useState('');
   const [recipient, setRecipient] = useState('');
   const [prompt, setPrompt] = useState('');
@@ -413,7 +416,7 @@ export default function App() {
         </div>
       )}
 
-      {/* FULL-WIDTH HEADER */}
+      {/* FULL-WIDTH HEADER WITH TAB SWITCHER */}
       <header style={styles.fullHeader}>
         <div style={styles.headerInner} className="header-inner">
           <div style={styles.logoGroup}>
@@ -429,6 +432,42 @@ export default function App() {
               </div>
               <div style={{ fontSize: '11px', color: '#9CA3AF' }} className="header-title-sub">AI-Powered Email Dispatch</div>
             </div>
+          </div>
+
+          {/* TAB SWITCHER */}
+          <div style={{ display: 'flex', gap: '8px', backgroundColor: '#10141B', padding: '4px', borderRadius: '10px', border: '1px solid #292E36' }}>
+            <button
+              onClick={() => setActiveTab('single')}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '8px',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: '600',
+                backgroundColor: activeTab === 'single' ? '#D6A967' : 'transparent',
+                color: activeTab === 'single' ? '#090B0F' : '#9CA3AF',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              Cockpit
+            </button>
+            <button
+              onClick={() => setActiveTab('bulk')}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '8px',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: '600',
+                backgroundColor: activeTab === 'bulk' ? '#D6A967' : 'transparent',
+                color: activeTab === 'bulk' ? '#090B0F' : '#9CA3AF',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              🚀 Bulk Dispatch
+            </button>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -451,191 +490,198 @@ export default function App() {
 
       {/* MAIN CONTENT */}
       <main style={styles.main} className="main-layout">
-        <div style={styles.gridTwoCol} className="cockpit-grid">
-          
-          <section style={styles.card} className="hover-card">
-            <div>
-              <h2 style={styles.cardTitle}>AI Dispatch Cockpit</h2>
-              <p style={styles.cardSub}>Compose your email with AI assistance</p>
+        {activeTab === 'single' ? (
+          <>
+            <div style={styles.gridTwoCol} className="cockpit-grid">
+              
+              <section style={styles.card} className="hover-card">
+                <div>
+                  <h2 style={styles.cardTitle}>AI Dispatch Cockpit</h2>
+                  <p style={styles.cardSub}>Compose your email with AI assistance</p>
 
-              <div style={styles.fieldGroup}>
-                <label style={styles.label}>FROM (SENDER EMAIL)</label>
-                <input
-                  type="email"
-                  placeholder="sender@domain.com"
-                  value={sender}
-                  onChange={(e) => setSender(e.target.value)}
-                  style={styles.input}
-                />
+                  <div style={styles.fieldGroup}>
+                    <label style={styles.label}>FROM (SENDER EMAIL)</label>
+                    <input
+                      type="email"
+                      placeholder="sender@domain.com"
+                      value={sender}
+                      onChange={(e) => setSender(e.target.value)}
+                      style={styles.input}
+                    />
 
-                <label style={styles.label}>TO (RECIPIENT EMAIL)</label>
-                <input
-                  type="email"
-                  placeholder="recipient@domain.com"
-                  value={recipient}
-                  onChange={(e) => setRecipient(e.target.value)}
-                  style={styles.input}
-                />
+                    <label style={styles.label}>TO (RECIPIENT EMAIL)</label>
+                    <input
+                      type="email"
+                      placeholder="recipient@domain.com"
+                      value={recipient}
+                      onChange={(e) => setRecipient(e.target.value)}
+                      style={styles.input}
+                    />
 
-                <label style={styles.label}>MEETING / CALENDAR LINK (OPTIONAL)</label>
-                <input
-                  type="text"
-                  placeholder="Calendar or Google Meet URL"
-                  value={meetingLink}
-                  onChange={(e) => setMeetingLink(e.target.value)}
-                  style={styles.input}
-                />
+                    <label style={styles.label}>MEETING / CALENDAR LINK (OPTIONAL)</label>
+                    <input
+                      type="text"
+                      placeholder="Calendar or Google Meet URL"
+                      value={meetingLink}
+                      onChange={(e) => setMeetingLink(e.target.value)}
+                      style={styles.input}
+                    />
 
-                <label style={styles.label}>AI CONTEXT / PROMPT</label>
-                <textarea
-                  rows={3}
-                  placeholder="Enter AI prompt here..."
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  style={styles.textarea}
-                />
+                    <label style={styles.label}>AI CONTEXT / PROMPT</label>
+                    <textarea
+                      rows={3}
+                      placeholder="Enter AI prompt here..."
+                      value={prompt}
+                      onChange={(e) => setPrompt(e.target.value)}
+                      style={styles.textarea}
+                    />
 
-                <label style={styles.label}>NAME / DETAILS BELOW REGARDS (OPTIONAL)</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Alex Johnson | Lead Engineer"
-                  value={signOff}
-                  onChange={(e) => setSignOff(e.target.value)}
-                  style={styles.input}
-                />
+                    <label style={styles.label}>NAME / DETAILS BELOW REGARDS (OPTIONAL)</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Alex Johnson | Lead Engineer"
+                      value={signOff}
+                      onChange={(e) => setSignOff(e.target.value)}
+                      style={styles.input}
+                    />
 
-                <label style={{ ...styles.label, marginBottom: '4px' }}>QUICK SUGGESTIONS</label>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  {[
-                    { label: 'Follow-up email', prompt: 'Draft a follow-up email after meeting.' },
-                    { label: 'Meeting request', prompt: 'Request a 15-minute quick alignment meeting.' },
-                    { label: 'Project update', prompt: 'Provide a quick weekly project progress update.' },
-                    { label: 'Introduction', prompt: 'Introduction email to new client.' }
-                  ].map((item, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => handleQuickSuggestion(item.prompt)}
-                      style={styles.pillBtn}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
+                    <label style={{ ...styles.label, marginBottom: '4px' }}>QUICK SUGGESTIONS</label>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {[
+                        { label: 'Follow-up email', prompt: 'Draft a follow-up email after meeting.' },
+                        { label: 'Meeting request', prompt: 'Request a 15-minute quick alignment meeting.' },
+                        { label: 'Project update', prompt: 'Provide a quick weekly project progress update.' },
+                        { label: 'Introduction', prompt: 'Introduction email to new client.' }
+                      ].map((item, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handleQuickSuggestion(item.prompt)}
+                          style={styles.pillBtn}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            <button
-              type="button"
-              onClick={handleGenerateDraft}
-              disabled={generating}
-              className="glow-btn"
-              style={{ ...styles.primaryBtn, opacity: generating ? 0.6 : 1 }}
-            >
-              ✨ {generating ? 'Generating AI Draft...' : 'Generate AI Draft'}
-            </button>
-          </section>
+                <button
+                  type="button"
+                  onClick={handleGenerateDraft}
+                  disabled={generating}
+                  className="glow-btn"
+                  style={{ ...styles.primaryBtn, opacity: generating ? 0.6 : 1 }}
+                >
+                  ✨ {generating ? 'Generating AI Draft...' : 'Generate AI Draft'}
+                </button>
+              </section>
 
-          <section style={styles.card} className="hover-card">
-            <div>
-              <h2 style={styles.cardTitle}>Editable Draft & Preview</h2>
-              <p style={styles.cardSub}>Review and edit your AI-generated email</p>
+              <section style={styles.card} className="hover-card">
+                <div>
+                  <h2 style={styles.cardTitle}>Editable Draft & Preview</h2>
+                  <p style={styles.cardSub}>Review and edit your AI-generated email</p>
 
-              <div style={styles.fieldGroup}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <label style={styles.label}>SUBJECT</label>
-                  <span style={{ fontSize: '11px', color: '#9CA3AF' }}>{subject.length}/120</span>
+                  <div style={styles.fieldGroup}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <label style={styles.label}>SUBJECT</label>
+                      <span style={{ fontSize: '11px', color: '#9CA3AF' }}>{subject.length}/120</span>
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Email Subject"
+                      value={subject}
+                      onChange={(e) => setSubject(e.target.value)}
+                      style={styles.input}
+                    />
+
+                    <div style={styles.previewBox}>
+                      <button
+                        type="button"
+                        onClick={copyToClipboard}
+                        style={styles.copyBtn}
+                        title="Copy Draft"
+                      >
+                        📋
+                      </button>
+
+                      <div style={styles.previewMeta}>
+                        <div><span style={{ color: '#9CA3AF' }}>To:</span> {recipient || 'recipient@domain.com'}</div>
+                        <div><span style={{ color: '#9CA3AF' }}>From:</span> {sender || 'sender@domain.com'}</div>
+                      </div>
+
+                      <textarea
+                        placeholder="Your AI-generated email body will appear here..."
+                        value={body}
+                        onChange={(e) => setBody(e.target.value)}
+                        style={styles.previewTextarea}
+                      />
+                    </div>
+                  </div>
                 </div>
-                <input
-                  type="text"
-                  placeholder="Email Subject"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  style={styles.input}
-                />
 
-                <div style={styles.previewBox}>
+                <div>
                   <button
                     type="button"
-                    onClick={copyToClipboard}
-                    style={styles.copyBtn}
-                    title="Copy Draft"
+                    onClick={handleInitiateDispatch}
+                    disabled={dispatching || !body}
+                    className="glow-btn"
+                    style={{ ...styles.primaryBtn, opacity: dispatching || !body ? 0.5 : 1 }}
                   >
-                    📋
+                    🚀 {dispatching ? 'Sending OTP...' : 'Send Email via SMTP'}
                   </button>
 
-                  <div style={styles.previewMeta}>
-                    <div><span style={{ color: '#9CA3AF' }}>To:</span> {recipient || 'recipient@domain.com'}</div>
-                    <div><span style={{ color: '#9CA3AF' }}>From:</span> {sender || 'sender@domain.com'}</div>
+                  <div style={styles.statusIndicator}>
+                    <span style={{ color: '#35D0A0', fontWeight: 'bold' }}>✓</span> {isDispatched ? 'Dispatched via SMTP' : 'Ready to generate'}
                   </div>
-
-                  <textarea
-                    placeholder="Your AI-generated email body will appear here..."
-                    value={body}
-                    onChange={(e) => setBody(e.target.value)}
-                    style={styles.previewTextarea}
-                  />
                 </div>
+              </section>
+
+            </div>
+
+            <section style={styles.gridFourCol} className="kpi-grid">
+              <div style={styles.kpiCard} className="hover-card">
+                <div style={styles.kpiHeader}>
+                  <span style={styles.kpiLabel}>AI SUCCESS RATE</span>
+                  <span style={{ ...styles.badge, color: '#35D0A0', borderColor: 'rgba(53, 208, 160, 0.3)' }}>LIVE</span>
+                </div>
+                <div style={styles.kpiValue}>{stats.completionRate}</div>
+                <div style={styles.kpiSub}>{stats.totalLogs} logs</div>
               </div>
-            </div>
 
-            <div>
-              <button
-                type="button"
-                onClick={handleInitiateDispatch}
-                disabled={dispatching || !body}
-                className="glow-btn"
-                style={{ ...styles.primaryBtn, opacity: dispatching || !body ? 0.5 : 1 }}
-              >
-                🚀 {dispatching ? 'Sending OTP...' : 'Send Email via SMTP'}
-              </button>
-
-              <div style={styles.statusIndicator}>
-                <span style={{ color: '#35D0A0', fontWeight: 'bold' }}>✓</span> {isDispatched ? 'Dispatched via SMTP' : 'Ready to generate'}
+              <div style={styles.kpiCard} className="hover-card">
+                <div style={styles.kpiHeader}>
+                  <span style={styles.kpiLabel}>SMTP QUEUE</span>
+                  <span style={{ ...styles.badge, color: '#D6A967', borderColor: 'rgba(214, 169, 103, 0.3)' }}>READY</span>
+                </div>
+                <div style={styles.kpiValue}>{stats.activeQueue}</div>
+                <div style={styles.kpiSub}>0 Backlog</div>
               </div>
-            </div>
-          </section>
 
-        </div>
+              <div style={styles.kpiCard} className="hover-card">
+                <div style={styles.kpiHeader}>
+                  <span style={styles.kpiLabel}>AVG VELOCITY</span>
+                  <span style={{ ...styles.badge, color: '#8B7CF6', borderColor: 'rgba(139, 124, 246, 0.3)' }}>FAST</span>
+                </div>
+                <div style={styles.kpiValue}>{stats.velocity}</div>
+                <div style={styles.kpiSub}>Response</div>
+              </div>
 
-        <section style={styles.gridFourCol} className="kpi-grid">
-          <div style={styles.kpiCard} className="hover-card">
-            <div style={styles.kpiHeader}>
-              <span style={styles.kpiLabel}>AI SUCCESS RATE</span>
-              <span style={{ ...styles.badge, color: '#35D0A0', borderColor: 'rgba(53, 208, 160, 0.3)' }}>LIVE</span>
-            </div>
-            <div style={styles.kpiValue}>{stats.completionRate}</div>
-            <div style={styles.kpiSub}>{stats.totalLogs} logs</div>
+              <div style={styles.kpiCard} className="hover-card">
+                <div style={styles.kpiHeader}>
+                  <span style={styles.kpiLabel}>TOTAL MAILS SENT</span>
+                  <span style={{ ...styles.badge, color: '#35D0A0', borderColor: 'rgba(53, 208, 160, 0.3)' }}>SYNCED</span>
+                </div>
+                <div style={styles.kpiValue}>{stats.sentCount || stats.totalLogs}</div>
+                <div style={styles.kpiSub}>Live DB</div>
+              </div>
+            </section>
+          </>
+        ) : (
+          <div style={{ backgroundColor: 'rgba(20, 25, 34, 0.85)', border: '1px solid #292E36', borderRadius: '16px', padding: '24px' }}>
+            <BulkEmail />
           </div>
-
-          <div style={styles.kpiCard} className="hover-card">
-            <div style={styles.kpiHeader}>
-              <span style={styles.kpiLabel}>SMTP QUEUE</span>
-              <span style={{ ...styles.badge, color: '#D6A967', borderColor: 'rgba(214, 169, 103, 0.3)' }}>READY</span>
-            </div>
-            <div style={styles.kpiValue}>{stats.activeQueue}</div>
-            <div style={styles.kpiSub}>0 Backlog</div>
-          </div>
-
-          <div style={styles.kpiCard} className="hover-card">
-            <div style={styles.kpiHeader}>
-              <span style={styles.kpiLabel}>AVG VELOCITY</span>
-              <span style={{ ...styles.badge, color: '#8B7CF6', borderColor: 'rgba(139, 124, 246, 0.3)' }}>FAST</span>
-            </div>
-            <div style={styles.kpiValue}>{stats.velocity}</div>
-            <div style={styles.kpiSub}>Response</div>
-          </div>
-
-          <div style={styles.kpiCard} className="hover-card">
-            <div style={styles.kpiHeader}>
-              <span style={styles.kpiLabel}>TOTAL MAILS SENT</span>
-              <span style={{ ...styles.badge, color: '#35D0A0', borderColor: 'rgba(53, 208, 160, 0.3)' }}>SYNCED</span>
-            </div>
-            <div style={styles.kpiValue}>{stats.sentCount || stats.totalLogs}</div>
-            <div style={styles.kpiSub}>Live DB</div>
-          </div>
-        </section>
-
+        )}
       </main>
 
       <Footer />
