@@ -1,1027 +1,676 @@
-import React, { useState, useEffect } from 'react';
-import confetti from 'canvas-confetti';
-import logoImg from './logo.png';
-import BulkEmail from './components/BulkEmail';
+import React, { useState, useRef, useEffect, useCallback } from 'react'
+import {
+  Mail, Activity, Zap, BarChart3, Shield, Upload, Send,
+  Terminal, CheckCircle, XCircle, AlertTriangle, ChevronRight,
+  Clock, Users, TrendingUp, Cpu, X, Eye, EyeOff, Layers,
+  FileText, Inbox, Settings, Bell
+} from 'lucide-react'
+import Papa from 'papaparse'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+// ─── API Base URL Config ─────────────────────────────────────────────────────
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
-function Footer() {
+const NAV_TABS = ['Dashboard', 'Single Dispatch', 'Bulk Campaign', 'Logs']
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function GoldLettermark() {
   return (
-    <footer style={styles.fullFooter}>
-      <div style={styles.footerInner} className="footer-inner">
-        {/* LEFT: BRAND */}
-        <div style={styles.footerBrandGroup}>
-          <span style={{ color: '#F5F2EA', fontWeight: '700', fontSize: '13px' }}>© 2026 MailFreeli</span>
-        </div>
-
-        {/* CENTER: DESKTOP DETAILS */}
-        <div style={styles.footerLinksGroup} className="footer-links-group">
-          <span>Built for smarter communication</span>
-          <span style={styles.dotSeparator}>•</span>
-          <span>Powered by AI</span>
-        </div>
-
-        {/* RIGHT: LIVE SYSTEM STATUS BADGE */}
-        <div style={styles.footerStatusGroup}>
-          <span className="pulse-dot" style={styles.statusDot}></span>
-          <span>System Online</span>
-        </div>
-      </div>
-    </footer>
-  );
+    <div className="relative flex items-center justify-center w-9 h-9 rounded-lg overflow-hidden"
+         style={{ background: 'linear-gradient(135deg, #1A1408 0%, #2A1E0A 100%)', border: '1px solid #3D2E12' }}>
+      <div className="absolute inset-0" style={{
+        background: 'radial-gradient(ellipse 80% 80% at 50% 20%, rgba(214,169,103,0.18) 0%, transparent 70%)'
+      }} />
+      <span className="relative font-bold text-lg leading-none gold-text" style={{ fontFamily: 'var(--font-mono)' }}>M</span>
+    </div>
+  )
 }
 
+function StatusBadge({ online }) {
+  return (
+    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full glass text-xs font-medium"
+         style={{ border: online ? '1px solid rgba(16,185,129,0.3)' : '1px solid #292E36' }}>
+      <span className="relative flex h-2 w-2">
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+              style={{ background: online ? '#10B981' : '#EF4444' }} />
+        <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: online ? '#10B981' : '#EF4444' }} />
+      </span>
+      <span style={{ color: online ? '#10B981' : '#EF4444' }}>
+        {online ? 'API Engine Online' : 'API Offline'}
+      </span>
+    </div>
+  )
+}
+
+function MetricCard({ icon: Icon, label, value, sub, badge, badgeColor, accent }) {
+  return (
+    <div className="glass rounded-2xl p-5 flex flex-col gap-4 relative overflow-hidden group"
+         style={{ transition: 'border-color 0.2s' }}
+         onMouseEnter={e => (e.currentTarget.style.borderColor = '#3D3520')}
+         onMouseLeave={e => (e.currentTarget.style.borderColor = '#292E36')}>
+      <div className="absolute top-0 right-0 w-24 h-24 rounded-full pointer-events-none"
+           style={{ background: `radial-gradient(circle, ${accent || 'rgba(214,169,103,0.06)'} 0%, transparent 70%)`, transform: 'translate(30%, -30%)' }} />
+      <div className="flex items-start justify-between">
+        <div className="flex items-center justify-center w-10 h-10 rounded-xl"
+             style={{ background: 'rgba(214,169,103,0.08)', border: '1px solid rgba(214,169,103,0.15)' }}>
+          <Icon size={18} style={{ color: '#D6A967' }} strokeWidth={1.5} />
+        </div>
+        {badge && (
+          <span className="text-xs font-semibold px-2.5 py-1 rounded-full"
+                style={{ background: badgeColor || 'rgba(16,185,129,0.12)', color: badgeColor ? '#EF4444' : '#10B981', border: `1px solid ${badgeColor ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)'}` }}>
+            {badge}
+          </span>
+        )}
+      </div>
+      <div>
+        <div className="text-2xl font-bold tracking-tight" style={{ color: '#F5F2EA' }}>{value}</div>
+        <div className="text-xs mt-1" style={{ color: '#9CA3AF' }}>{label}</div>
+      </div>
+      <div className="text-xs font-medium" style={{ color: '#9CA3AF' }}>{sub}</div>
+    </div>
+  )
+}
+
+function ProgressBar({ label, value, max, color }) {
+  const pct = Math.min(100, Math.round((value / max) * 100))
+  return (
+    <div className="space-y-1.5">
+      <div className="flex justify-between items-center text-xs" style={{ color: '#9CA3AF' }}>
+        <span>{label}</span>
+        <span style={{ color: '#F5F2EA' }}>{value} / {max}</span>
+      </div>
+      <div className="h-1.5 rounded-full" style={{ background: '#1E2530' }}>
+        <div className="h-full rounded-full progress-pulse" style={{ width: `${pct}%`, background: color, transition: 'width 0.6s ease' }} />
+      </div>
+      <div className="text-right text-xs" style={{ color: '#9CA3AF' }}>{pct}% used</div>
+    </div>
+  )
+}
+
+function LogPill({ type }) {
+  const map = {
+    success: { label: 'OK', color: '#10B981', bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.2)' },
+    error:   { label: 'ERR', color: '#EF4444', bg: 'rgba(239,68,68,0.1)',  border: 'rgba(239,68,68,0.2)' },
+    info:    { label: 'QUEUE', color: '#D6A967', bg: 'rgba(214,169,103,0.1)', border: 'rgba(214,169,103,0.2)' },
+  }
+  const s = map[type] || map.info
+  return (
+    <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded"
+          style={{ color: s.color, background: s.bg, border: `1px solid ${s.border}` }}>
+      {s.label}
+    </span>
+  )
+}
+
+// ─── OTP Security Modal ──────────────────────────────────────────────────────
+
+function OtpModal({ isOpen, onClose, onConfirm, senderEmail, isVerifying }) {
+  const [digits, setDigits] = useState(['', '', '', '', '', ''])
+  const [timeLeft, setTimeLeft] = useState(300)
+  const refs = useRef([])
+
+  useEffect(() => {
+    if (!isOpen) { setDigits(['', '', '', '', '', '']); setTimeLeft(300); return }
+    const t = setInterval(() => setTimeLeft(p => (p <= 1 ? (clearInterval(t), 0) : p - 1)), 1000)
+    return () => clearInterval(t)
+  }, [isOpen])
+
+  useEffect(() => {
+    if (isOpen) setTimeout(() => refs.current[0]?.focus(), 80)
+  }, [isOpen])
+
+  const handleKey = (i, e) => {
+    if (e.key === 'Backspace' && !digits[i] && i > 0) refs.current[i - 1]?.focus()
+  }
+
+  const handleChange = (i, val) => {
+    const v = val.replace(/\D/g, '').slice(-1)
+    const next = [...digits]; next[i] = v; setDigits(next)
+    if (v && i < 5) refs.current[i + 1]?.focus()
+  }
+
+  const handlePaste = (e) => {
+    e.preventDefault()
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
+    const next = [...digits]
+    pasted.split('').forEach((c, idx) => { if (idx < 6) next[idx] = c })
+    setDigits(next)
+    refs.current[Math.min(pasted.length, 5)]?.focus()
+  }
+
+  const mm = String(Math.floor(timeLeft / 60)).padStart(2, '0')
+  const ss = String(timeLeft % 60).padStart(2, '0')
+  const complete = digits.every(d => d !== '')
+  const otpString = digits.join('')
+
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center modal-backdrop"
+         style={{ background: 'rgba(9,11,15,0.85)' }}
+         onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="glass rounded-2xl w-full max-w-md mx-4 relative overflow-hidden"
+           style={{ border: '1px solid #292E36' }}>
+        <div className="absolute top-0 left-0 right-0 h-px"
+             style={{ background: 'linear-gradient(90deg, transparent, #D6A967, #C49848, transparent)' }} />
+        <div className="absolute top-0 left-0 right-0 h-16"
+             style={{ background: 'linear-gradient(180deg, rgba(214,169,103,0.06) 0%, transparent 100%)' }} />
+
+        <div className="relative p-6">
+          <div className="flex items-start justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl"
+                   style={{ background: 'rgba(214,169,103,0.1)', border: '1px solid rgba(214,169,103,0.2)' }}>
+                <Shield size={20} style={{ color: '#D6A967' }} strokeWidth={1.5} />
+              </div>
+              <div>
+                <h3 className="font-semibold text-base" style={{ color: '#F5F2EA' }}>🔒 Security Verification</h3>
+                <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>Enter authorization code</p>
+              </div>
+            </div>
+            <button onClick={onClose} className="flex items-center justify-center w-8 h-8 rounded-lg transition-colors"
+                    style={{ color: '#9CA3AF' }}
+                    onMouseEnter={e => { e.currentTarget.style.color = '#F5F2EA'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
+                    onMouseLeave={e => { e.currentTarget.style.color = '#9CA3AF'; e.currentTarget.style.background = 'transparent' }}>
+              <X size={16} />
+            </button>
+          </div>
+
+          <p className="text-sm mb-6" style={{ color: '#9CA3AF' }}>
+            A 6-digit verification code was sent to <strong>{senderEmail || 'configured sender'}</strong>. Enter code below:
+          </p>
+
+          <div className="flex gap-3 justify-center mb-5" onPaste={handlePaste}>
+            {digits.map((d, i) => (
+              <input
+                key={i}
+                ref={el => { refs.current[i] = el }}
+                className="otp-input"
+                type="text"
+                inputMode="numeric"
+                maxLength={1}
+                value={d}
+                onChange={e => handleChange(i, e.target.value)}
+                onKeyDown={e => handleKey(i, e)}
+              />
+            ))}
+          </div>
+
+          <div className="flex justify-center mb-6">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium"
+                 style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#EF4444' }}>
+              <AlertTriangle size={12} />
+              ⚠️ Code expires in {mm}:{ss}
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <button onClick={onClose}
+                    disabled={isVerifying}
+                    className="flex-1 py-3 rounded-xl text-sm font-semibold transition-all disabled:opacity-50"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid #292E36', color: '#9CA3AF' }}>
+              Cancel
+            </button>
+            <button onClick={() => complete && onConfirm(otpString)}
+                    disabled={!complete || isVerifying}
+                    className="btn-gold flex-1 py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
+              {isVerifying ? 'Verifying Code...' : 'Confirm & Dispatch'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Main App Workspace ──────────────────────────────────────────────────────
+
 export default function App() {
-  const [activeTab, setActiveTab] = useState('single'); // 'single' or 'bulk'
+  const [activeTab, setActiveTab] = useState('Bulk Campaign')
+  const [isOtpModalOpen, setIsOtpModalOpen] = useState(false)
+  const [isRequestingOtp, setIsRequestingOtp] = useState(false)
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
 
-  // Single Mail Cockpit States
-  const [sender, setSender] = useState('');
-  const [recipient, setRecipient] = useState('');
-  const [prompt, setPrompt] = useState('');
-  const [meetingLink, setMeetingLink] = useState('');
-  const [signOff, setSignOff] = useState('Alex Johnson | Lead Engineer');
+  const [senderEmail, setSenderEmail] = useState('kashyapbajaj733@gmail.com')
+  const [csvFile, setCsvFile] = useState(null)
+  const [parsedContacts, setParsedContacts] = useState([])
+  const [subject, setSubject] = useState('Hey {{name}}, quick update for you 🚀')
+  const [aiPrompt, setAiPrompt] = useState('Write a warm, personalized 2-sentence email for {{name}}.')
 
-  const [subject, setSubject] = useState('');
-  const [body, setBody] = useState('');
-  const [isDispatched, setIsDispatched] = useState(false);
+  const [isDispatching, setIsDispatching] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const [logs, setLogs] = useState([])
+  const [dispatchDone, setDispatchDone] = useState(false)
 
-  const [generating, setGenerating] = useState(false);
-  const [dispatching, setDispatching] = useState(false);
+  const [apiOnline, setApiOnline] = useState(true)
+  const [stats, setStats] = useState({ totalLogs: '0', sentCount: '0', failedCount: '0', completionRate: '100.0%' })
+  const terminalRef = useRef(null)
 
-  const [showOtpModal, setShowOtpModal] = useState(false);
-  const [otpInput, setOtpInput] = useState('');
-  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  // Auto-scroll terminal console
+  useEffect(() => {
+    if (terminalRef.current) terminalRef.current.scrollTop = 0
+  }, [logs])
 
-  const [otpTimeLeft, setOtpTimeLeft] = useState(300);
-  const [toast, setToast] = useState(null);
-
-  const [stats, setStats] = useState({
-    completionRate: '100.0%',
-    activeQueue: '0',
-    velocity: '0.18s',
-    totalLogs: '0',
-    sentCount: '0',
-  });
-
-  const showToast = (message, type = 'error') => {
-    setToast({ message, type });
-    setTimeout(() => {
-      setToast(null);
-    }, 3000);
-  };
-
-  const fetchStats = async () => {
+  // Poll DB statistics from server
+  const fetchStats = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/stats`);
+      const res = await fetch(`${API_BASE_URL}/api/stats`)
       if (res.ok) {
-        const data = await res.json();
-        setStats(data);
+        const data = await res.json()
+        setStats(data)
+        setApiOnline(true)
+      } else {
+        setApiOnline(false)
+      }
+    } catch {
+      setApiOnline(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchStats()
+    const interval = setInterval(fetchStats, 4000)
+    return () => clearInterval(interval)
+  }, [fetchStats])
+
+  const addTerminalLog = (type, recipient, message) => {
+    const newLog = {
+      id: Date.now() + Math.random(),
+      type,
+      recipient,
+      message,
+      time: new Date().toLocaleTimeString('en-GB', { hour12: false }),
+    }
+    setLogs(prev => [newLog, ...prev].slice(0, 30))
+  }
+
+  // Parse CSV File via Papaparse
+  const processCsvFile = (file) => {
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        const valid = results.data.filter(c => c.email && c.email.includes('@'))
+        setParsedContacts(valid)
+        setCsvFile({ name: file.name, count: valid.length })
+        addTerminalLog('info', 'CSV_PARSER', `Loaded ${valid.length} recipients from ${file.name}`)
+      },
+      error: (err) => {
+        addTerminalLog('error', 'CSV_PARSER', `Failed to read file: ${err.message}`)
+      }
+    })
+  }
+
+  const handleDrop = useCallback((e) => {
+    e.preventDefault(); setIsDragging(false)
+    const file = e.dataTransfer.files[0]
+    if (file && file.name.endsWith('.csv')) processCsvFile(file)
+  }, [])
+
+  const handleFileInput = (e) => {
+    const file = e.target.files?.[0]
+    if (file) processCsvFile(file)
+  }
+
+  // Step 1: Trigger OTP via Server
+  const handleInitiateBulkCampaign = async () => {
+    if (parsedContacts.length === 0) {
+      alert('Please upload a CSV file with valid recipient emails first.')
+      return
+    }
+    if (!subject.trim()) {
+      alert('Please enter an email subject line.')
+      return
+    }
+
+    setIsRequestingOtp(true)
+    addTerminalLog('info', senderEmail, 'Requesting authorization OTP...')
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/send-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sender: senderEmail }),
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        addTerminalLog('info', senderEmail, 'OTP code dispatched to sender inbox!')
+        setIsOtpModalOpen(true)
+      } else {
+        addTerminalLog('error', senderEmail, `OTP failure: ${data.error}`)
+        alert(`Failed to send OTP: ${data.error}`)
       }
     } catch (err) {
-      console.error('Error fetching stats:', err);
-    }
-  };
-
-  useEffect(() => {
-    fetchStats();
-    const interval = setInterval(() => {
-      fetchStats();
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    let timer;
-    if (showOtpModal && otpTimeLeft > 0) {
-      timer = setInterval(() => {
-        setOtpTimeLeft((prev) => prev - 1);
-      }, 1000);
-    } else if (otpTimeLeft === 0) {
-      setShowOtpModal(false);
-      showToast('OTP expired! Please request a new one.', 'error');
-    }
-    return () => clearInterval(timer);
-  }, [showOtpModal, otpTimeLeft]);
-
-  const triggerConfetti = () => {
-    confetti({
-      particleCount: 100,
-      spread: 70,
-      origin: { y: 0.6 },
-      colors: ['#D6A967', '#35D0A0', '#F5F2EA', '#F0C98A']
-    });
-  };
-
-  const handleReelDemoFill = () => {
-    setSender('demo.agent@mailfreeli.ai');
-    setRecipient('alex.client@enterprise.com');
-    setMeetingLink('https://meet.google.com/abc-demo-xyz');
-    setPrompt('Draft a concise follow-up email requesting a 15-minute alignment sync tomorrow to review sprint progress.');
-    setSignOff('Alex Johnson | Lead Engineer, MailFreeli');
-    showToast('🎬 Reel Demo Mode: Sample data auto-filled!', 'success');
-  };
-
-  const handleQuickSuggestion = (text) => setPrompt(text);
-
-  const handleGenerateDraft = async () => {
-    if (!recipient || !prompt) {
-      showToast('Please fill in recipient email and prompt!', 'error');
-      return;
-    }
-
-    setGenerating(true);
-    setIsDispatched(false);
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/generate-draft`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ recipient, prompt, meetingLink, signOff }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setSubject(data.subject || 'Follow-up from MailFreeli');
-        setBody(data.body || prompt);
-        showToast('AI Draft generated successfully!', 'success');
-        fetchStats();
-      } else {
-        showToast(`Error: ${data.error || 'AI generation failed.'}`, 'error');
-      }
-    } catch (error) {
-      showToast('Failed to generate draft. Please try again.', 'error');
+      addTerminalLog('error', senderEmail, `Connection error: ${err.message}`)
+      alert('Could not connect to Express backend server.')
     } finally {
-      setGenerating(false);
+      setIsRequestingOtp(false)
     }
-  };
+  }
 
-  const handleInitiateDispatch = async () => {
-    if (!recipient || !subject || !body) {
-      showToast('Missing email content to dispatch!', 'error');
-      return;
-    }
-
-    setDispatching(true);
+  // Step 2: Verify OTP and Dispatch Bulk Emails
+  const handleVerifyAndDispatchBulk = async (otp) => {
+    setIsVerifyingOtp(true)
+    addTerminalLog('info', 'SECURITY', 'Verifying security OTP...')
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/send-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sender }),
-      });
+      setIsOtpModalOpen(false)
+      setIsDispatching(true)
+      setProgress(10)
+      setDispatchDone(false)
 
-      const data = await response.json();
+      addTerminalLog('info', 'RESEND_API', `Dispatching ${parsedContacts.length} emails...`)
 
-      if (response.ok) {
-        setOtpTimeLeft(300);
-        setShowOtpModal(true);
-        showToast(data.message || 'OTP sent! Check your sender inbox.', 'success');
-      } else {
-        showToast(`Error: ${data.error}`, 'error');
-      }
-    } catch (error) {
-      showToast('Failed to request OTP.', 'error');
-    } finally {
-      setDispatching(false);
-    }
-  };
-
-  const handleVerifyAndDispatch = async () => {
-    if (!otpInput) {
-      showToast('Please enter the verification OTP!', 'error');
-      return;
-    }
-
-    setVerifyingOtp(true);
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/verify-and-dispatch`, {
+      const res = await fetch(`${API_BASE_URL}/api/emails/bulk-send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          otp: otpInput,
-          sender,
-          recipient,
-          prompt,
+          recipients: parsedContacts,
           subject,
-          body,
+          templatePrompt: aiPrompt,
         }),
-      });
+      })
 
-      const data = await response.json();
+      const data = await res.json()
 
-      if (response.ok) {
-        setIsDispatched(true);
-        setShowOtpModal(false);
-        setOtpInput('');
-        triggerConfetti();
-        showToast('OTP verified & email dispatched successfully!', 'success');
-        fetchStats();
+      if (res.ok && data.success) {
+        setProgress(100)
+        setIsDispatching(false)
+        setDispatchDone(true)
+
+        data.results.forEach((r) => {
+          addTerminalLog(
+            r.status === 'SENT' ? 'success' : 'error',
+            r.email,
+            r.status === 'SENT' ? `Delivered (ID: ${r.resendId})` : `Failed: ${r.error}`
+          )
+        })
+
+        fetchStats()
       } else {
-        showToast(`Error: ${data.error}`, 'error');
+        setIsDispatching(false)
+        addTerminalLog('error', 'BULK_ERROR', data.error || 'Bulk dispatch failed.')
       }
-    } catch (error) {
-      showToast('OTP verification failed.', 'error');
+    } catch (err) {
+      setIsDispatching(false)
+      addTerminalLog('error', 'SERVER_ERROR', err.message)
     } finally {
-      setVerifyingOtp(false);
+      setIsVerifyingOtp(false)
     }
-  };
-
-  const copyToClipboard = () => {
-    if (!body) return;
-    navigator.clipboard.writeText(`Subject: ${subject}\n\n${body}`);
-    showToast('Copied draft to clipboard!', 'success');
-  };
-
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-  };
+  }
 
   return (
-    <div style={styles.appContainer}>
-      <style>{`
-        html, body, #root {
-          background-color: #090B0F !important;
-          color: #F5F2EA !important;
-          margin: 0 !important;
-          padding: 0 !important;
-          width: 100% !important;
-          overflow-x: hidden !important;
-          font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-        }
-        * { box-sizing: border-box; }
-        
-        input:focus, textarea:focus { border-color: #D6A967 !important; outline: none !important; box-shadow: 0 0 10px rgba(214, 169, 103, 0.2) !important; }
-        
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #10141B; }
-        ::-webkit-scrollbar-thumb { background: #292E36; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #D6A967; }
+    <div className="min-h-screen bg-glow">
+      <OtpModal
+        isOpen={isOtpModalOpen}
+        onClose={() => setIsOtpModalOpen(false)}
+        onConfirm={handleVerifyAndDispatchBulk}
+        senderEmail={senderEmail}
+        isVerifying={isVerifyingOtp}
+      />
 
-        @keyframes dropDown {
-          from { opacity: 0; transform: translate(-50%, -20px); }
-          to { opacity: 1; transform: translate(-50%, 0); }
-        }
-
-        @keyframes modalScale {
-          from { opacity: 0; transform: scale(0.92); }
-          to { opacity: 1; transform: scale(1); }
-        }
-
-        @keyframes pulseGlow {
-          0% { box-shadow: 0 0 0 0 rgba(53, 208, 160, 0.7); }
-          70% { box-shadow: 0 0 0 8px rgba(53, 208, 160, 0); }
-          100% { box-shadow: 0 0 0 0 rgba(53, 208, 160, 0); }
-        }
-
-        .pulse-dot {
-          animation: pulseGlow 2s infinite;
-        }
-
-        .glow-btn {
-          transition: all 0.3s ease !important;
-        }
-        .glow-btn:hover {
-          transform: translateY(-2px) !important;
-          box-shadow: 0 6px 20px rgba(214, 169, 103, 0.4) !important;
-        }
-
-        .hover-card {
-          transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease !important;
-        }
-        .hover-card:hover {
-          transform: translateY(-4px) !important;
-          border-color: rgba(214, 169, 103, 0.4) !important;
-          box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5) !important;
-        }
-
-        @media (max-width: 900px) {
-          .cockpit-grid {
-            grid-template-columns: 1fr !important;
-          }
-        }
-
-        @media (max-width: 640px) {
-          .header-inner {
-            padding: 0 12px !important;
-            height: auto !important;
-            padding-top: 12px !important;
-            padding-bottom: 12px !important;
-          }
-          .demo-btn-text {
-            display: none !important;
-          }
-          .main-layout {
-            padding: 16px 12px !important;
-            gap: 16px !important;
-          }
-          .kpi-grid {
-            grid-template-columns: repeat(2, 1fr) !important;
-            gap: 10px !important;
-          }
-          .modal-box {
-            width: 92% !important;
-            padding: 20px 16px !important;
-          }
-
-          .footer-inner {
-            flex-direction: column !important;
-            align-items: center !important;
-            justify-content: center !important;
-            text-align: center !important;
-            gap: 12px !important;
-            padding: 16px 12px !important;
-          }
-          .footer-links-group {
-            flex-direction: column !important;
-            gap: 6px !important;
-          }
-          .footer-dot {
-            display: none !important;
-          }
-        }
-
-        @media (max-width: 420px) {
-          .kpi-grid {
-            grid-template-columns: 1fr !important;
-          }
-          .header-title-sub, .user-name-text {
-            display: none !important;
-          }
-        }
-      `}</style>
-
-      {toast && (
-        <div style={styles.midTopAlert}>
-          <div style={{
-            ...styles.alertIcon,
-            backgroundColor: toast.type === 'success' ? 'rgba(53, 208, 160, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-            color: toast.type === 'success' ? '#35D0A0' : '#EF4444'
-          }}>
-            {toast.type === 'success' ? '✓' : '⚠️'}
-          </div>
-          <div style={{ fontSize: '13px', fontWeight: '600', color: '#F5F2EA' }}>
-            {toast.message}
-          </div>
-        </div>
-      )}
-
-      {showOtpModal && (
-        <div style={styles.modalOverlay}>
-          <div style={styles.modalContent} className="modal-box">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#F5F2EA', margin: 0 }}>
-                🔒 Security Verification
-              </h3>
-              <div style={styles.timerBadge}>
-                ⏱️ {formatTime(otpTimeLeft)}
-              </div>
-            </div>
-
-            <p style={{ fontSize: '12px', color: '#9CA3AF', marginBottom: '16px', lineHeight: '1.5' }}>
-              A 6-digit OTP has been sent to <strong>{sender || 'your sender email'}</strong>. Enter it below to authorize this email dispatch.
-            </p>
-
-            <input
-              type="text"
-              maxLength="6"
-              placeholder="Enter OTP"
-              value={otpInput}
-              onChange={(e) => setOtpInput(e.target.value)}
-              style={{ ...styles.input, textAlign: 'center', letterSpacing: '4px', fontSize: '18px', fontWeight: 'bold' }}
-            />
-
-            <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
-              <button
-                type="button"
-                onClick={() => setShowOtpModal(false)}
-                style={styles.secondaryBtn}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleVerifyAndDispatch}
-                disabled={verifyingOtp}
-                className="glow-btn"
-                style={{ ...styles.primaryBtn, marginTop: 0, opacity: verifyingOtp ? 0.6 : 1 }}
-              >
-                {verifyingOtp ? 'Verifying...' : 'Verify & Send'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* FULL-WIDTH HEADER WITH TAB SWITCHER */}
-      <header style={styles.fullHeader}>
-        <div style={styles.headerInner} className="header-inner">
-          <div style={styles.logoGroup}>
-            <img 
-              src={logoImg} 
-              alt="MailFreeli Logo" 
-              style={styles.logoImage} 
-            />
+      {/* ── HEADER ────────────────────────────────────────────── */}
+      <header className="sticky top-0 z-40 glass" style={{ borderBottom: '1px solid #1E2530' }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
+          <div className="flex items-center gap-3">
+            <GoldLettermark />
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontWeight: '700', fontSize: '16px', color: '#F5F2EA' }}>MailFreeli</span>
-                <span style={styles.enterprisePill}>Enterprise</span>
-              </div>
-              <div style={{ fontSize: '11px', color: '#9CA3AF' }} className="header-title-sub">AI-Powered Email Dispatch</div>
+              <div className="font-bold text-sm leading-tight" style={{ color: '#F5F2EA' }}>MailFreeli</div>
+              <div className="text-xs leading-tight" style={{ color: '#9CA3AF', letterSpacing: '0.04em' }}>ENTERPRISE</div>
             </div>
           </div>
 
-          {/* TAB SWITCHER */}
-          <div style={{ display: 'flex', gap: '8px', backgroundColor: '#10141B', padding: '4px', borderRadius: '10px', border: '1px solid #292E36' }}>
-            <button
-              onClick={() => setActiveTab('single')}
-              style={{
-                padding: '6px 14px',
-                borderRadius: '8px',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '12px',
-                fontWeight: '600',
-                backgroundColor: activeTab === 'single' ? '#D6A967' : 'transparent',
-                color: activeTab === 'single' ? '#090B0F' : '#9CA3AF',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              Cockpit
-            </button>
-            <button
-              onClick={() => setActiveTab('bulk')}
-              style={{
-                padding: '6px 14px',
-                borderRadius: '8px',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '12px',
-                fontWeight: '600',
-                backgroundColor: activeTab === 'bulk' ? '#D6A967' : 'transparent',
-                color: activeTab === 'bulk' ? '#090B0F' : '#9CA3AF',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              🚀 Bulk Dispatch
-            </button>
-          </div>
+          <nav className="hidden md:flex items-center gap-1">
+            {NAV_TABS.map(tab => (
+              <button key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      className={`nav-tab px-4 py-2 text-sm font-medium rounded-lg transition-all ${activeTab === tab ? 'active' : ''}`}
+                      style={{
+                        color: activeTab === tab ? '#D6A967' : '#9CA3AF',
+                        background: activeTab === tab ? 'rgba(214,169,103,0.07)' : 'transparent',
+                      }}>
+                {tab}
+              </button>
+            ))}
+          </nav>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <button
-              type="button"
-              onClick={handleReelDemoFill}
-              style={styles.demoModeBtn}
-              title="Auto-fill sample data for demo video"
-            >
-              🎬 <span className="demo-btn-text">Demo Mode</span>
-            </button>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <div style={styles.avatar}>U</div>
-              <span style={{ fontSize: '13px', color: '#F5F2EA', fontWeight: '500' }} className="user-name-text">Hello, User</span>
+          <div className="flex items-center gap-3">
+            <StatusBadge online={apiOnline} />
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+                 style={{ background: 'linear-gradient(135deg, #C49848, #D6A967)', color: '#0D0F14' }}>
+              MF
             </div>
           </div>
         </div>
       </header>
 
-      {/* MAIN CONTENT */}
-      <main style={styles.main} className="main-layout">
-        {activeTab === 'single' ? (
-          <>
-            <div style={styles.gridTwoCol} className="cockpit-grid">
-              
-              <section style={styles.card} className="hover-card">
-                <div>
-                  <h2 style={styles.cardTitle}>AI Dispatch Cockpit</h2>
-                  <p style={styles.cardSub}>Compose your email with AI assistance</p>
+      {/* ── MAIN CONTENT WORKSPACE ───────────────────────────── */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
 
-                  <div style={styles.fieldGroup}>
-                    <label style={styles.label}>FROM (SENDER EMAIL)</label>
-                    <input
-                      type="email"
-                      placeholder="sender@domain.com"
-                      value={sender}
-                      onChange={(e) => setSender(e.target.value)}
-                      style={styles.input}
-                    />
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight" style={{ color: '#F5F2EA' }}>
+              Dispatch <span className="gold-text">Control Center</span>
+            </h1>
+            <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>
+              Resend API Engine · Workspace: production
+            </p>
+          </div>
+          <div className="hidden sm:flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg"
+               style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.15)', color: '#10B981' }}>
+            <Activity size={12} />
+            All systems nominal
+          </div>
+        </div>
 
-                    <label style={styles.label}>TO (RECIPIENT EMAIL)</label>
-                    <input
-                      type="email"
-                      placeholder="recipient@domain.com"
-                      value={recipient}
-                      onChange={(e) => setRecipient(e.target.value)}
-                      style={styles.input}
-                    />
+        {/* ── METRICS GRID ─────────────────────────────────────── */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <MetricCard
+            icon={Mail}
+            label="Total Mails Logged"
+            value={stats.totalLogs ? String(stats.totalLogs) : '0'}
+            sub={`Sent: ${stats.sentCount || 0} | Failed: ${stats.failedCount || 0}`}
+            badge={stats.completionRate || '100.0%'}
+            accent="rgba(16,185,129,0.06)"
+          />
+          <MetricCard
+            icon={Layers}
+            label="Active Queue"
+            value={isDispatching ? `${parsedContacts.length}` : '0'}
+            sub={isDispatching ? 'Dispatching CSV batch...' : 'Awaiting dispatch trigger'}
+            badge={isDispatching ? 'LIVE' : undefined}
+            accent="rgba(214,169,103,0.06)"
+          />
+          <MetricCard
+            icon={Zap}
+            label="Dispatch Velocity"
+            value="0.50s"
+            sub="Per email · Resend API delay"
+            accent="rgba(99,102,241,0.06)"
+          />
+          <div className="glass rounded-2xl p-5 flex flex-col gap-3 col-span-2 lg:col-span-1">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl"
+                   style={{ background: 'rgba(214,169,103,0.08)', border: '1px solid rgba(214,169,103,0.15)' }}>
+                <BarChart3 size={18} style={{ color: '#D6A967' }} strokeWidth={1.5} />
+              </div>
+              <div className="text-xs font-medium" style={{ color: '#9CA3AF' }}>Daily Quota Tracker</div>
+            </div>
+            <div className="space-y-3">
+              <ProgressBar label="Resend API" value={parsedContacts.length} max={100} color="#D6A967" />
+              <ProgressBar label="Gmail SMTP" value={Number(stats.sentCount) || 0} max={500} color="#10B981" />
+            </div>
+          </div>
+        </div>
 
-                    <label style={styles.label}>MEETING / CALENDAR LINK (OPTIONAL)</label>
-                    <input
-                      type="text"
-                      placeholder="Calendar or Google Meet URL"
-                      value={meetingLink}
-                      onChange={(e) => setMeetingLink(e.target.value)}
-                      style={styles.input}
-                    />
+        {/* ── BULK WORKSPACE (2-COLUMN GRID) ──────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-                    <label style={styles.label}>AI CONTEXT / PROMPT</label>
-                    <textarea
-                      rows={3}
-                      placeholder="Enter AI prompt here..."
-                      value={prompt}
-                      onChange={(e) => setPrompt(e.target.value)}
-                      style={styles.textarea}
-                    />
-
-                    <label style={styles.label}>NAME / DETAILS BELOW REGARDS (OPTIONAL)</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Alex Johnson | Lead Engineer"
-                      value={signOff}
-                      onChange={(e) => setSignOff(e.target.value)}
-                      style={styles.input}
-                    />
-
-                    <label style={{ ...styles.label, marginBottom: '4px' }}>QUICK SUGGESTIONS</label>
-                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                      {[
-                        { label: 'Follow-up email', prompt: 'Draft a follow-up email after meeting.' },
-                        { label: 'Meeting request', prompt: 'Request a 15-minute quick alignment meeting.' },
-                        { label: 'Project update', prompt: 'Provide a quick weekly project progress update.' },
-                        { label: 'Introduction', prompt: 'Introduction email to new client.' }
-                      ].map((item, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => handleQuickSuggestion(item.prompt)}
-                          style={styles.pillBtn}
-                        >
-                          {item.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleGenerateDraft}
-                  disabled={generating}
-                  className="glow-btn"
-                  style={{ ...styles.primaryBtn, opacity: generating ? 0.6 : 1 }}
-                >
-                  ✨ {generating ? 'Generating AI Draft...' : 'Generate AI Draft'}
-                </button>
-              </section>
-
-              <section style={styles.card} className="hover-card">
-                <div>
-                  <h2 style={styles.cardTitle}>Editable Draft & Preview</h2>
-                  <p style={styles.cardSub}>Review and edit your AI-generated email</p>
-
-                  <div style={styles.fieldGroup}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <label style={styles.label}>SUBJECT</label>
-                      <span style={{ fontSize: '11px', color: '#9CA3AF' }}>{subject.length}/120</span>
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Email Subject"
-                      value={subject}
-                      onChange={(e) => setSubject(e.target.value)}
-                      style={styles.input}
-                    />
-
-                    <div style={styles.previewBox}>
-                      <button
-                        type="button"
-                        onClick={copyToClipboard}
-                        style={styles.copyBtn}
-                        title="Copy Draft"
-                      >
-                        📋
-                      </button>
-
-                      <div style={styles.previewMeta}>
-                        <div><span style={{ color: '#9CA3AF' }}>To:</span> {recipient || 'recipient@domain.com'}</div>
-                        <div><span style={{ color: '#9CA3AF' }}>From:</span> {sender || 'sender@domain.com'}</div>
-                      </div>
-
-                      <textarea
-                        placeholder="Your AI-generated email body will appear here..."
-                        value={body}
-                        onChange={(e) => setBody(e.target.value)}
-                        style={styles.previewTextarea}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <button
-                    type="button"
-                    onClick={handleInitiateDispatch}
-                    disabled={dispatching || !body}
-                    className="glow-btn"
-                    style={{ ...styles.primaryBtn, opacity: dispatching || !body ? 0.5 : 1 }}
-                  >
-                    🚀 {dispatching ? 'Sending OTP...' : 'Send Email via SMTP'}
-                  </button>
-
-                  <div style={styles.statusIndicator}>
-                    <span style={{ color: '#35D0A0', fontWeight: 'bold' }}>✓</span> {isDispatched ? 'Dispatched via SMTP' : 'Ready to generate'}
-                  </div>
-                </div>
-              </section>
-
+          {/* LEFT: Campaign Setup Form */}
+          <div className="glass rounded-2xl p-6 space-y-5">
+            <div className="flex items-center gap-2 pb-1" style={{ borderBottom: '1px solid #1E2530' }}>
+              <FileText size={16} style={{ color: '#D6A967' }} strokeWidth={1.5} />
+              <h2 className="font-semibold text-sm" style={{ color: '#F5F2EA' }}>Campaign Setup</h2>
             </div>
 
-            <section style={styles.gridFourCol} className="kpi-grid">
-              <div style={styles.kpiCard} className="hover-card">
-                <div style={styles.kpiHeader}>
-                  <span style={styles.kpiLabel}>AI SUCCESS RATE</span>
-                  <span style={{ ...styles.badge, color: '#35D0A0', borderColor: 'rgba(53, 208, 160, 0.3)' }}>LIVE</span>
-                </div>
-                <div style={styles.kpiValue}>{stats.completionRate}</div>
-                <div style={styles.kpiSub}>{stats.totalLogs} logs</div>
-              </div>
+            <div>
+              <label className="block text-xs font-medium mb-2" style={{ color: '#9CA3AF' }}>Sender Verification Address</label>
+              <input
+                type="email"
+                value={senderEmail}
+                onChange={e => setSenderEmail(e.target.value)}
+                placeholder="sender@domain.com"
+                className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+                style={{ background: 'rgba(16,20,27,0.8)', border: '1px solid #292E36', color: '#F5F2EA' }}
+              />
+            </div>
 
-              <div style={styles.kpiCard} className="hover-card">
-                <div style={styles.kpiHeader}>
-                  <span style={styles.kpiLabel}>SMTP QUEUE</span>
-                  <span style={{ ...styles.badge, color: '#D6A967', borderColor: 'rgba(214, 169, 103, 0.3)' }}>READY</span>
-                </div>
-                <div style={styles.kpiValue}>{stats.activeQueue}</div>
-                <div style={styles.kpiSub}>0 Backlog</div>
-              </div>
+            <div>
+              <label className="block text-xs font-medium mb-2" style={{ color: '#9CA3AF' }}>Recipient List (CSV)</label>
+              <label
+                className={`drag-zone block rounded-xl p-6 text-center cursor-pointer ${isDragging ? 'dragging' : ''}`}
+                style={{
+                  border: `2px dashed ${csvFile ? '#D6A967' : '#292E36'}`,
+                  background: csvFile ? 'rgba(214,169,103,0.04)' : 'rgba(20,25,34,0.5)',
+                }}
+                onDragOver={e => { e.preventDefault(); setIsDragging(true) }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={handleDrop}>
+                <input type="file" accept=".csv" className="hidden" onChange={handleFileInput} />
+                {csvFile ? (
+                  <div className="space-y-2">
+                    <CheckCircle size={24} style={{ color: '#10B981', margin: '0 auto' }} strokeWidth={1.5} />
+                    <div className="text-sm font-semibold" style={{ color: '#F5F2EA' }}>{csvFile.name}</div>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
+                         style={{ background: 'rgba(214,169,103,0.12)', border: '1px solid rgba(214,169,103,0.25)', color: '#D6A967' }}>
+                      <Users size={11} />
+                      {parsedContacts.length} contacts parsed
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Upload size={24} style={{ color: '#9CA3AF', margin: '0 auto' }} strokeWidth={1.5} />
+                    <div className="text-sm font-medium" style={{ color: '#9CA3AF' }}>Drop CSV here or click to browse</div>
+                    <div className="text-xs" style={{ color: '#6B7280' }}>Columns needed: email, name, company</div>
+                  </div>
+                )}
+              </label>
+            </div>
 
-              <div style={styles.kpiCard} className="hover-card">
-                <div style={styles.kpiHeader}>
-                  <span style={styles.kpiLabel}>AVG VELOCITY</span>
-                  <span style={{ ...styles.badge, color: '#8B7CF6', borderColor: 'rgba(139, 124, 246, 0.3)' }}>FAST</span>
-                </div>
-                <div style={styles.kpiValue}>{stats.velocity}</div>
-                <div style={styles.kpiSub}>Response</div>
-              </div>
+            <div>
+              <label className="block text-xs font-medium mb-2" style={{ color: '#9CA3AF' }}>Subject Line</label>
+              <input
+                type="text"
+                value={subject}
+                onChange={e => setSubject(e.target.value)}
+                placeholder="Subject with {{name}} tag"
+                className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+                style={{ background: 'rgba(16,20,27,0.8)', border: '1px solid #292E36', color: '#F5F2EA' }}
+              />
+            </div>
 
-              <div style={styles.kpiCard} className="hover-card">
-                <div style={styles.kpiHeader}>
-                  <span style={styles.kpiLabel}>TOTAL MAILS SENT</span>
-                  <span style={{ ...styles.badge, color: '#35D0A0', borderColor: 'rgba(53, 208, 160, 0.3)' }}>SYNCED</span>
-                </div>
-                <div style={styles.kpiValue}>{stats.sentCount || stats.totalLogs}</div>
-                <div style={styles.kpiSub}>Live DB</div>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-medium" style={{ color: '#9CA3AF' }}>Groq AI Template Prompt</label>
+                <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded font-mono font-semibold"
+                      style={{ background: 'rgba(214,169,103,0.1)', color: '#D6A967', border: '1px solid rgba(214,169,103,0.2)' }}>
+                  {'{{name}}'}
+                </span>
               </div>
-            </section>
-          </>
-        ) : (
-          <div style={{ backgroundColor: 'rgba(20, 25, 34, 0.85)', border: '1px solid #292E36', borderRadius: '16px', padding: '24px' }}>
-            <BulkEmail />
+              <textarea
+                rows={3}
+                value={aiPrompt}
+                onChange={e => setAiPrompt(e.target.value)}
+                placeholder="Personalization prompt using CSV variables"
+                className="w-full rounded-xl px-4 py-3 text-sm outline-none resize-none"
+                style={{ background: 'rgba(16,20,27,0.8)', border: '1px solid #292E36', color: '#F5F2EA' }}
+              />
+            </div>
+
+            <button
+              onClick={handleInitiateBulkCampaign}
+              disabled={isDispatching || isRequestingOtp}
+              className="btn-gold w-full py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-60">
+              {isRequestingOtp ? (
+                'Requesting OTP Verification...'
+              ) : isDispatching ? (
+                'Dispatching Campaign...'
+              ) : (
+                '🚀 Launch Bulk Campaign'
+              )}
+            </button>
           </div>
-        )}
+
+          {/* RIGHT: Live Terminal Output */}
+          <div className="glass rounded-2xl p-6 flex flex-col gap-4">
+            <div className="flex items-center justify-between pb-1" style={{ borderBottom: '1px solid #1E2530' }}>
+              <div className="flex items-center gap-2">
+                <Terminal size={16} style={{ color: '#D6A967' }} strokeWidth={1.5} />
+                <h2 className="font-semibold text-sm" style={{ color: '#F5F2EA' }}>Live Dispatch Terminal</h2>
+              </div>
+              {dispatchDone && (
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-full"
+                      style={{ background: 'rgba(16,185,129,0.1)', color: '#10B981', border: '1px solid rgba(16,185,129,0.2)' }}>
+                  ✓ Batch complete
+                </span>
+              )}
+            </div>
+
+            <div>
+              <div className="flex justify-between items-center text-xs mb-2" style={{ color: '#9CA3AF' }}>
+                <span>Progress</span>
+                <span style={{ color: '#D6A967', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{progress}%</span>
+              </div>
+              <div className="h-2 rounded-full overflow-hidden" style={{ background: '#10141B', border: '1px solid #1E2530' }}>
+                <div
+                  className="h-full rounded-full"
+                  style={{
+                    width: `${progress}%`,
+                    background: 'linear-gradient(90deg, #B88A48, #D6A967, #F0C980)',
+                    transition: 'width 0.4s ease',
+                  }}
+                />
+              </div>
+            </div>
+
+            <div
+              ref={terminalRef}
+              className="flex-1 rounded-xl p-4 overflow-y-auto terminal-scroll space-y-2"
+              style={{
+                background: '#10141B',
+                border: '1px solid #1A1F28',
+                fontFamily: 'var(--font-mono)',
+                minHeight: '280px',
+                maxHeight: '320px',
+              }}>
+              <div className="flex items-center gap-1.5 pb-2 mb-1" style={{ borderBottom: '1px solid #1E2530' }}>
+                <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#EF4444' }} />
+                <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#F59E0B' }} />
+                <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#10B981' }} />
+                <span className="ml-2 text-xs" style={{ color: '#4B5563' }}>mailfreeli — resend-engine v2.4.1</span>
+              </div>
+
+              {logs.length === 0 ? (
+                <div className="text-xs text-gray-500 italic pt-4">No active batch logs. Upload a CSV file to begin.</div>
+              ) : (
+                logs.map(log => (
+                  <div key={log.id} className="log-entry flex items-start gap-3 text-xs">
+                    <span style={{ color: '#4B5563', minWidth: 64 }}>{log.time}</span>
+                    <LogPill type={log.type} />
+                    <span className="truncate flex-1" style={{ color: log.type === 'error' ? '#EF4444' : log.type === 'info' ? '#D6A967' : '#9CA3AF' }}>
+                      {log.recipient}
+                    </span>
+                    <span style={{ color: '#6B7280', minWidth: 'max-content' }}>{log.message}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
       </main>
-
-      <Footer />
     </div>
-  );
+  )
 }
-
-const styles = {
-  appContainer: {
-    backgroundColor: '#090B0F',
-    color: '#F5F2EA',
-    minHeight: '100vh',
-    width: '100%',
-    display: 'flex',
-    flexDirection: 'column',
-  },
-  midTopAlert: {
-    position: 'fixed',
-    top: '72px',
-    left: '50%',
-    animation: 'dropDown 0.25s ease-out forwards',
-    backgroundColor: '#141922',
-    border: '1px solid #292E36',
-    borderRadius: '14px',
-    padding: '12px 18px',
-    boxShadow: '0 12px 30px rgba(0,0,0,0.6)',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    zIndex: 9999,
-    maxWidth: '380px',
-    width: '90%',
-  },
-  modalOverlay: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    width: '100vw',
-    height: '100vh',
-    backgroundColor: 'rgba(9, 11, 15, 0.75)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 10000,
-    backdropFilter: 'blur(8px)',
-  },
-  modalContent: {
-    backgroundColor: 'rgba(20, 25, 34, 0.95)',
-    border: '1px solid rgba(214, 169, 103, 0.3)',
-    borderRadius: '16px',
-    padding: '24px',
-    maxWidth: '400px',
-    width: '90%',
-    boxShadow: '0 20px 40px rgba(0,0,0,0.8)',
-    animation: 'modalScale 0.25s ease-out forwards',
-  },
-  timerBadge: {
-    fontSize: '11px',
-    fontWeight: '700',
-    color: '#D6A967',
-    backgroundColor: 'rgba(214, 169, 103, 0.1)',
-    border: '1px solid rgba(214, 169, 103, 0.3)',
-    borderRadius: '12px',
-    padding: '3px 8px',
-  },
-  secondaryBtn: {
-    width: '100%',
-    padding: '12px',
-    borderRadius: '10px',
-    border: '1px solid #292E36',
-    backgroundColor: '#10141B',
-    color: '#F5F2EA',
-    fontWeight: '600',
-    fontSize: '13px',
-    cursor: 'pointer',
-  },
-  alertIcon: {
-    width: '28px',
-    height: '28px',
-    borderRadius: '8px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontWeight: 'bold',
-    fontSize: '13px',
-    flexShrink: 0,
-  },
-  fullHeader: {
-    width: '100%',
-    borderBottom: '1px solid #292E36',
-    backgroundColor: 'rgba(16, 20, 27, 0.9)',
-    backdropFilter: 'blur(10px)',
-    position: 'sticky',
-    top: 0,
-    zIndex: 100,
-  },
-  headerInner: {
-    maxWidth: '1280px',
-    width: '100%',
-    margin: '0 auto',
-    padding: '0 20px',
-    height: '64px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  logoGroup: { display: 'flex', alignItems: 'center', gap: '12px' },
-  logoImage: {
-    width: '38px',
-    height: '38px',
-    objectFit: 'contain',
-    borderRadius: '8px',
-  },
-  enterprisePill: {
-    fontSize: '10px',
-    fontWeight: '600',
-    color: '#D6A967',
-    backgroundColor: 'rgba(214, 169, 103, 0.1)',
-    border: '1px solid rgba(214, 169, 103, 0.2)',
-    padding: '2px 8px',
-    borderRadius: '12px',
-    textTransform: 'uppercase',
-  },
-  demoModeBtn: {
-    backgroundColor: 'rgba(214, 169, 103, 0.15)',
-    border: '1px solid #D6A967',
-    borderRadius: '20px',
-    color: '#D6A967',
-    padding: '6px 12px',
-    fontSize: '12px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-  },
-  avatar: {
-    width: '32px',
-    height: '32px',
-    borderRadius: '50%',
-    backgroundColor: '#141922',
-    border: '1px solid #292E36',
-    color: '#D6A967',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '12px',
-    fontWeight: 'bold',
-  },
-  main: {
-    maxWidth: '1280px',
-    width: '100%',
-    margin: '0 auto',
-    padding: '24px 20px',
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '24px',
-  },
-  gridTwoCol: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-    gap: '20px',
-  },
-  card: {
-    backgroundColor: 'rgba(20, 25, 34, 0.85)',
-    border: '1px solid #292E36',
-    borderRadius: '16px',
-    padding: '20px',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-    minHeight: '480px',
-    backdropFilter: 'blur(12px)',
-  },
-  cardTitle: { fontSize: '18px', fontWeight: '700', color: '#F5F2EA' },
-  cardSub: { fontSize: '12px', color: '#9CA3AF', marginTop: '2px', marginBottom: '16px' },
-  fieldGroup: { display: 'flex', flexDirection: 'column', gap: '10px' },
-  label: { fontSize: '11px', fontWeight: '600', color: '#9CA3AF', letterSpacing: '0.5px' },
-  input: {
-    backgroundColor: '#10141B',
-    border: '1px solid #292E36',
-    borderRadius: '10px',
-    padding: '10px 12px',
-    color: '#F5F2EA',
-    fontSize: '13px',
-    width: '100%',
-    transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
-  },
-  textarea: {
-    backgroundColor: '#10141B',
-    border: '1px solid #292E36',
-    borderRadius: '10px',
-    padding: '10px 12px',
-    color: '#F5F2EA',
-    fontSize: '13px',
-    width: '100%',
-    resize: 'none',
-    transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
-  },
-  pillBtn: {
-    backgroundColor: '#10141B',
-    border: '1px solid #292E36',
-    borderRadius: '20px',
-    color: '#F5F2EA',
-    padding: '5px 10px',
-    fontSize: '11px',
-    cursor: 'pointer',
-    transition: 'border-color 0.2s ease',
-  },
-  primaryBtn: {
-    width: '100%',
-    padding: '12px',
-    borderRadius: '10px',
-    border: 'none',
-    background: 'linear-gradient(90deg, #D6A967, #F0C98A)',
-    color: '#090B0F',
-    fontWeight: '700',
-    fontSize: '13px',
-    cursor: 'pointer',
-    marginTop: '16px',
-  },
-  previewBox: {
-    backgroundColor: '#10141B',
-    border: '1px solid #292E36',
-    borderRadius: '10px',
-    padding: '14px',
-    position: 'relative',
-    minHeight: '200px',
-    display: 'flex',
-    flexDirection: 'column',
-  },
-  copyBtn: {
-    position: 'absolute',
-    top: '10px',
-    right: '10px',
-    background: 'transparent',
-    border: 'none',
-    cursor: 'pointer',
-    fontSize: '14px',
-  },
-  previewMeta: {
-    borderBottom: '1px solid #292E36',
-    paddingBottom: '8px',
-    marginBottom: '8px',
-    fontSize: '12px',
-    lineHeight: '1.5',
-  },
-  previewTextarea: {
-    backgroundColor: 'transparent',
-    border: 'none',
-    color: '#F5F2EA',
-    fontSize: '13px',
-    lineHeight: '1.5',
-    resize: 'none',
-    width: '100%',
-    flex: 1,
-    outline: 'none',
-  },
-  statusIndicator: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '6px',
-    fontSize: '12px',
-    color: '#35D0A0',
-    marginTop: '10px',
-  },
-  gridFourCol: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-    gap: '16px',
-  },
-  kpiCard: {
-    backgroundColor: 'rgba(20, 25, 34, 0.85)',
-    border: '1px solid #292E36',
-    borderRadius: '16px',
-    padding: '16px',
-    backdropFilter: 'blur(12px)',
-  },
-  kpiHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  kpiLabel: { fontSize: '11px', color: '#9CA3AF', fontWeight: '600' },
-  badge: {
-    fontSize: '9px',
-    fontWeight: 'bold',
-    border: '1px solid',
-    borderRadius: '10px',
-    padding: '2px 6px',
-  },
-  kpiValue: { fontSize: '22px', fontWeight: '800', margin: '10px 0 2px 0', color: '#F5F2EA' },
-  kpiSub: { fontSize: '11px', color: '#9CA3AF' },
-  fullFooter: {
-    width: '100%',
-    borderTop: '1px solid #292E36',
-    backgroundColor: 'rgba(16, 20, 27, 0.95)',
-    backdropFilter: 'blur(10px)',
-    marginTop: 'auto',
-    padding: '16px 0',
-  },
-  footerInner: {
-    maxWidth: '1280px',
-    width: '100%',
-    margin: '0 auto',
-    padding: '0 24px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    fontSize: '12px',
-    color: '#9CA3AF',
-  },
-  footerBrandGroup: {
-    display: 'flex',
-    alignItems: 'center',
-  },
-  footerLinksGroup: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    color: '#9CA3AF',
-    fontSize: '12px',
-  },
-  dotSeparator: {
-    color: '#3A4250',
-    fontSize: '12px',
-  },
-  footerStatusGroup: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    backgroundColor: 'rgba(53, 208, 160, 0.1)',
-    border: '1px solid rgba(53, 208, 160, 0.25)',
-    padding: '5px 12px',
-    borderRadius: '20px',
-    color: '#35D0A0',
-    fontWeight: '600',
-    fontSize: '11px',
-  },
-  statusDot: {
-    width: '7px',
-    height: '7px',
-    borderRadius: '50%',
-    backgroundColor: '#35D0A0',
-    display: 'inline-block',
-  },
-};
