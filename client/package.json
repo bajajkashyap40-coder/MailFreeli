@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tailwindcss/vite": "^4.3.3",
     "canvas-confetti": "^1.9.4",
     "lucide-react": "^1.47.0",
     "papaparse": "^5.7.0",

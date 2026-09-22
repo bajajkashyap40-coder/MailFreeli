@@ -1,53 +1,29 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@layer base {
+  :root {
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
 
-:root {
-  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-  --bg-deep: #090B0F;
-  --bg-card: #141922;
-  --bg-surface: #10141B;
-  --gold-light: #D6A967;
-  --gold-mid: #C49848;
-  --gold-dark: #B88A48;
-  --border-glass: #292E36;
-  --text-primary: #F5F2EA;
-  --text-muted: #9CA3AF;
-  --success: #10B981;
-  --error: #EF4444;
-  --amber-glow: rgba(214, 169, 103, 0.15);
+  body {
+    background-color: #090B0F !important;
+    color: #F5F2EA !important;
+    font-family: var(--font-sans);
+    margin: 0;
+    padding: 0;
+  }
 }
 
-* {
-  box-sizing: border-box;
-}
-
-body {
-  background-color: var(--bg-deep);
-  color: var(--text-primary);
-  font-family: var(--font-sans);
-  margin: 0;
-  padding: 0;
-}
-
-/* Scrollbar */
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #292E36; border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: #D6A967; }
-
-/* Glass card */
+/* Glass card styling */
 .glass {
-  background: rgba(20, 25, 34, 0.72);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid #292E36;
+  background: rgba(20, 25, 34, 0.72) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid #292E36 !important;
 }
 
-/* Gold gradient text */
+/* Gold gradient typography */
 .gold-text {
   background: linear-gradient(135deg, #D6A967 0%, #F0C980 45%, #B88A48 100%);
   -webkit-background-clip: text;
@@ -55,7 +31,7 @@ body {
   background-clip: text;
 }
 
-/* Gold button */
+/* Gold CTA button */
 .btn-gold {
   background: linear-gradient(135deg, #C49848 0%, #D6A967 50%, #C49848 100%);
   color: #0D0F14;
@@ -67,11 +43,8 @@ body {
   box-shadow: 0 0 32px rgba(214, 169, 103, 0.45);
   transform: translateY(-1px);
 }
-.btn-gold:active {
-  transform: translateY(0);
-}
 
-/* Ambient background glow */
+/* Glow background */
 .bg-glow {
   background:
     radial-gradient(ellipse 80% 50% at 20% 10%, rgba(214, 169, 103, 0.06) 0%, transparent 60%),
@@ -79,11 +52,7 @@ body {
     #090B0F;
 }
 
-/* Terminal scrollbar */
-.terminal-scroll::-webkit-scrollbar { width: 3px; }
-.terminal-scroll::-webkit-scrollbar-thumb { background: #292E36; }
-
-/* OTP input */
+/* OTP inputs */
 .otp-input {
   background: rgba(20, 25, 34, 0.9);
   border: 1px solid #3D3520;
@@ -96,44 +65,14 @@ body {
   height: 60px;
   border-radius: 8px;
   outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
   caret-color: #D6A967;
 }
 .otp-input:focus {
   border-color: #D6A967;
-  box-shadow: 0 0 0 2px rgba(214, 169, 103, 0.2), 0 0 12px rgba(214, 169, 103, 0.15);
+  box-shadow: 0 0 0 2px rgba(214, 169, 103, 0.2);
 }
 
-/* Modal overlay backdrop */
-.modal-backdrop {
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
-/* Progress bar animation */
-@keyframes progress-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
-}
-.progress-pulse { animation: progress-pulse 1.8s ease-in-out infinite; }
-
-/* Drag zone hover */
-.drag-zone {
-  transition: background 0.2s, border-color 0.2s;
-}
-.drag-zone:hover, .drag-zone.dragging {
-  background: rgba(214, 169, 103, 0.05);
-  border-color: #D6A967;
-}
-
-/* Log entry animation */
-@keyframes slideIn {
-  from { opacity: 0; transform: translateX(-6px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-.log-entry { animation: slideIn 0.2s ease forwards; }
-
-/* Nav tab */
+/* Nav tabs active underline */
 .nav-tab {
   position: relative;
   transition: color 0.15s;
