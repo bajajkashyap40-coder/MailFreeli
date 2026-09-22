@@ -4,6 +4,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import nodemailer from 'nodemailer';
 import Groq from 'groq-sdk';
+import { Resend } from 'resend';
 import Email from './models/Email.js';
 
 dotenv.config();
@@ -31,6 +32,9 @@ app.use(cors({
 }));
 
 app.use(express.json());
+
+// Initialize Resend Client
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // In-memory OTP Store: { "target_sender_email": { otp: "123456", expiresAt: timestamp } }
 const otpStore = new Map();
@@ -140,7 +144,7 @@ async function getValidModel() {
   }
 }
 
-// Helper: Reusable Nodemailer Transporter
+// Helper: Reusable Nodemailer Transporter (Used for OTP verification flow)
 const createTransporter = () => {
   return nodemailer.createTransport({
     host: 'smtp.gmail.com',
@@ -355,7 +359,7 @@ app.post('/api/verify-and-dispatch', async (req, res) => {
   }
 });
 
-// 7. NEW STEP 4: BULK DISPATCH ENGINE ENDPOINT (Rate-limited CSV Batch Sending)
+// 7. STEP 4: BULK DISPATCH ENGINE ENDPOINT (Powered by Resend API)
 app.post('/api/emails/bulk-send', async (req, res) => {
   const { recipients, subject, templatePrompt } = req.body;
 
@@ -367,16 +371,17 @@ app.post('/api/emails/bulk-send', async (req, res) => {
     return res.status(400).json({ error: 'Email subject is required.' });
   }
 
-  console.log(`[BULK BATCH STARTED] Processing ${recipients.length} recipients...`);
-  const transporter = createTransporter();
-  const senderEmail = process.env.EMAIL_USER;
+  console.log(`[RESEND BATCH STARTED] Processing ${recipients.length} recipients...`);
   const results = [];
+
+  // Default testing sender address provided by Resend before custom domain verification
+  const fromAddress = 'MailFreeli <onboarding@resend.dev>';
 
   for (const recipientObj of recipients) {
     const { email, name } = recipientObj;
     let finalBody = `Hi ${name || 'there'},\n\nHope this email finds you well.`;
 
-    // 1. Generate AI Personalized Body if prompt provided
+    // 1. AI Personalization via Groq
     if (templatePrompt) {
       try {
         const model = await getValidModel();
@@ -403,22 +408,26 @@ app.post('/api/emails/bulk-send', async (req, res) => {
       }
     }
 
-    // 2. Dispatch Email via SMTP
+    // 2. Dispatch Email via Resend API
     try {
-      await transporter.sendMail({
-        from: `"MailFreeli Bulk" <${senderEmail}>`,
-        to: email,
+      const response = await resend.emails.send({
+        from: fromAddress,
+        to: [email],
         subject: subject,
-        html: generateDispatchHtml(subject, finalBody, senderEmail),
+        html: generateDispatchHtml(subject, finalBody, 'onboarding@resend.dev'),
       });
 
-      results.push({ email, status: 'SENT' });
-      console.log(`[BULK SENT] Delivered to ${email}`);
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      results.push({ email, status: 'SENT', resendId: response.data.id });
+      console.log(`[RESEND SENT] Delivered to ${email} (ID: ${response.data.id})`);
 
       // Log to MongoDB
       try {
         await Email.create({
-          sender: senderEmail,
+          sender: 'onboarding@resend.dev',
           recipient: email,
           prompt: templatePrompt || 'Bulk Dispatch',
           subject,
@@ -429,12 +438,12 @@ app.post('/api/emails/bulk-send', async (req, res) => {
         console.warn('DB Log failed for bulk email:', dbErr.message);
       }
     } catch (sendErr) {
-      console.error(`[BULK ERROR] Failed sending to ${email}:`, sendErr.message);
-      results.push({ email, status: 'FAILED' });
+      console.error(`[RESEND ERROR] Failed sending to ${email}:`, sendErr.message);
+      results.push({ email, status: 'FAILED', error: sendErr.message });
 
       try {
         await Email.create({
-          sender: senderEmail,
+          sender: 'onboarding@resend.dev',
           recipient: email,
           prompt: templatePrompt || 'Bulk Dispatch',
           subject,
@@ -446,11 +455,11 @@ app.post('/api/emails/bulk-send', async (req, res) => {
       }
     }
 
-    // 3. Rate-Limiting Delay (2 seconds between emails to maintain SMTP health)
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    // 3. Fast Delay (500ms between API calls)
+    await new Promise((resolve) => setTimeout(resolve, 500));
   }
 
-  console.log(`[BULK BATCH COMPLETED] Processed ${results.length} contacts.`);
+  console.log(`[RESEND BATCH COMPLETED] Processed ${results.length} contacts.`);
   return res.status(200).json({ success: true, results });
 });
 
