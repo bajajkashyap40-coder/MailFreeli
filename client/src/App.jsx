@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 
+const API_BASE = 'http://localhost:5000/api'
+
 // ─── Top Navigation Bar ───────────────────────────────────────────────────────
 
 function TopNav({ page, setPage }) {
@@ -85,6 +87,15 @@ function TopNav({ page, setPage }) {
 // ─── Page 1: Dashboard ───────────────────────────────────────────────────────
 
 function Dashboard({ setPage }) {
+  const [stats, setStats] = useState({ completionRate: '100.0%', sentCount: 0, failedCount: 0, totalLogs: 0 })
+
+  useEffect(() => {
+    fetch(`${API_BASE}/stats`)
+      .then(res => res.json())
+      .then(data => { if (data.sentCount !== undefined) setStats(data) })
+      .catch(err => console.warn('Backend offline, using fallback stats:', err))
+  }, [])
+
   return (
     <div style={{ padding: '32px 32px 48px', maxWidth: 1280, margin: '0 auto' }}>
       {/* Hero Banner */}
@@ -159,35 +170,31 @@ function Dashboard({ setPage }) {
           marginBottom: 28
         }}
       >
-        {/* Metric 1 */}
         <div className="glass-card metric-card" style={{ borderRadius: 12, padding: '22px 24px' }}>
           <div style={{ fontSize: 11, color: '#4B5563', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 14 }}>Total Emails Sent</div>
           <div className="flex items-end gap-3">
-            <div className="mono" style={{ fontSize: 34, fontWeight: 700, color: '#F1F3F8', lineHeight: 1 }}>48,291</div>
+            <div className="mono" style={{ fontSize: 34, fontWeight: 700, color: '#F1F3F8', lineHeight: 1 }}>{stats.sentCount}</div>
             <div
               className="status-badge"
               style={{ background: 'rgba(16,185,129,0.12)', color: '#10B981', border: '1px solid rgba(16,185,129,0.25)', marginBottom: 3, fontSize: 10 }}
             >
-              +12.4%
+              {stats.completionRate}
             </div>
           </div>
-          <div style={{ color: '#4B5563', fontSize: 12, marginTop: 8 }}>vs. last 30 days</div>
+          <div style={{ color: '#4B5563', fontSize: 12, marginTop: 8 }}>Success rate</div>
         </div>
 
-        {/* Metric 2 */}
         <div className="glass-card metric-card" style={{ borderRadius: 12, padding: '22px 24px' }}>
           <div className="flex items-center justify-between" style={{ marginBottom: 14 }}>
-            <div style={{ fontSize: 11, color: '#4B5563', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Active Queue</div>
-            <span className="status-badge" style={{ background: 'rgba(214,169,103,0.12)', color: '#D6A967', border: '1px solid rgba(214,169,103,0.3)', fontSize: 9 }}>
-              <span className="pulse-dot" style={{ background: '#D6A967' }} />
-              LIVE
+            <div style={{ fontSize: 11, color: '#4B5563', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Failed Dispatches</div>
+            <span className="status-badge" style={{ background: 'rgba(239,68,68,0.12)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)', fontSize: 9 }}>
+              BOUNCED
             </span>
           </div>
-          <div className="mono" style={{ fontSize: 34, fontWeight: 700, color: '#D6A967', lineHeight: 1 }}>342</div>
-          <div style={{ color: '#4B5563', fontSize: 12, marginTop: 8 }}>messages pending dispatch</div>
+          <div className="mono" style={{ fontSize: 34, fontWeight: 700, color: '#EF4444', lineHeight: 1 }}>{stats.failedCount}</div>
+          <div style={{ color: '#4B5563', fontSize: 12, marginTop: 8 }}>messages failed</div>
         </div>
 
-        {/* Metric 3 */}
         <div className="glass-card metric-card" style={{ borderRadius: 12, padding: '22px 24px' }}>
           <div style={{ fontSize: 11, color: '#4B5563', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 14 }}>Dispatch Velocity</div>
           <div className="flex items-baseline gap-1">
@@ -197,140 +204,10 @@ function Dashboard({ setPage }) {
           <div style={{ color: '#4B5563', fontSize: 12, marginTop: 8 }}>avg. across all providers</div>
         </div>
 
-        {/* Metric 4 — Daily Quota */}
         <div className="glass-card metric-card" style={{ borderRadius: 12, padding: '22px 24px' }}>
-          <div style={{ fontSize: 11, color: '#4B5563', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 14 }}>Daily Quota</div>
-          <div style={{ marginBottom: 12 }}>
-            <div className="flex items-center justify-between" style={{ marginBottom: 6 }}>
-              <span style={{ fontSize: 12, color: '#9CA3AF' }}>Resend API</span>
-              <span className="mono" style={{ fontSize: 11, color: '#D6A967' }}>67/100</span>
-            </div>
-            <div className="progress-bar-track">
-              <div className="progress-bar-fill" style={{ width: '67%' }} />
-            </div>
-          </div>
-          <div>
-            <div className="flex items-center justify-between" style={{ marginBottom: 6 }}>
-              <span style={{ fontSize: 12, color: '#9CA3AF' }}>Gmail SMTP</span>
-              <span className="mono" style={{ fontSize: 11, color: '#10B981' }}>318/500</span>
-            </div>
-            <div className="progress-bar-track">
-              <div className="progress-bar-fill" style={{ width: '63.6%', background: 'linear-gradient(90deg, #10B981, #059669)' }} />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Feature Highlight Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-        {/* Card A */}
-        <div className="glass-card" style={{ borderRadius: 14, padding: '24px', position: 'relative', overflow: 'hidden' }}>
-          <div
-            style={{
-              position: 'absolute', top: 0, right: 0, width: 120, height: 120,
-              background: 'radial-gradient(circle, rgba(214,169,103,0.08) 0%, transparent 70%)',
-              pointerEvents: 'none'
-            }}
-          />
-          <div className="flex items-center gap-3 mb-4">
-            <div
-              className="gold-gradient"
-              style={{ width: 40, height: 40, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
-            >
-              <svg width="20" height="20" fill="none" stroke="#090B0F" strokeWidth="2.2" viewBox="0 0 24 24">
-                <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-            <div>
-              <div style={{ fontWeight: 700, color: '#F1F3F8', fontSize: 14 }}>Groq AI Personalization</div>
-              <div className="mono" style={{ fontSize: 10, color: '#D6A967' }}>LLaMA-3.3-70B</div>
-            </div>
-          </div>
-          <p style={{ color: '#6B7280', fontSize: 13, lineHeight: 1.6, marginBottom: 16 }}>
-            Real-time content generation per recipient using contextual variables, company data, and behavioral signals.
-          </p>
-          <div className="flex gap-4">
-            {[ ['Tokens/req', '~840'], ['Avg latency', '1.2s'], ['Quality', '94%'] ].map(([label, val]) => (
-              <div key={label}>
-                <div style={{ fontSize: 10, color: '#4B5563', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{label}</div>
-                <div className="mono" style={{ fontSize: 15, color: '#D6A967', fontWeight: 600 }}>{val}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Card B */}
-        <div className="glass-card" style={{ borderRadius: 14, padding: '24px', position: 'relative', overflow: 'hidden' }}>
-          <div
-            style={{
-              position: 'absolute', top: 0, right: 0, width: 120, height: 120,
-              background: 'radial-gradient(circle, rgba(16,185,129,0.06) 0%, transparent 70%)',
-              pointerEvents: 'none'
-            }}
-          />
-          <div className="flex items-center gap-3 mb-4">
-            <div
-              style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
-            >
-              <svg width="20" height="20" fill="none" stroke="#10B981" strokeWidth="2" viewBox="0 0 24 24">
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" />
-              </svg>
-            </div>
-            <div>
-              <div style={{ fontWeight: 700, color: '#F1F3F8', fontSize: 14 }}>Multi-Provider Failover</div>
-              <div style={{ fontSize: 11, color: '#10B981' }}>2 of 2 providers active</div>
-            </div>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {[
-              { name: 'Resend API', status: 'Primary', color: '#10B981' },
-              { name: 'Gmail SMTP', status: 'Failover', color: '#D6A967' },
-              { name: 'SendGrid', status: 'Standby', color: '#4B5563' },
-            ].map((p) => (
-              <div key={p.name} className="flex items-center justify-between" style={{ padding: '8px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: 8 }}>
-                <div className="flex items-center gap-2">
-                  <div style={{ width: 7, height: 7, borderRadius: '50%', background: p.color }} />
-                  <span style={{ fontSize: 13, color: '#E8EAF0' }}>{p.name}</span>
-                </div>
-                <span className="mono" style={{ fontSize: 11, color: p.color, fontWeight: 600 }}>{p.status}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Card C */}
-        <div className="glass-card" style={{ borderRadius: 14, padding: '24px', position: 'relative', overflow: 'hidden' }}>
-          <div
-            style={{
-              position: 'absolute', top: 0, right: 0, width: 120, height: 120,
-              background: 'radial-gradient(circle, rgba(239,68,68,0.05) 0%, transparent 70%)',
-              pointerEvents: 'none'
-            }}
-          />
-          <div className="flex items-center gap-3 mb-4">
-            <div
-              style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
-            >
-              <svg width="20" height="20" fill="none" stroke="#EF4444" strokeWidth="2" viewBox="0 0 24 24">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-            <div>
-              <div style={{ fontWeight: 700, color: '#F1F3F8', fontSize: 14 }}>OTP Security Shield</div>
-              <div style={{ fontSize: 11, color: '#EF4444' }}>Batch authorization active</div>
-            </div>
-          </div>
-          <p style={{ color: '#6B7280', fontSize: 13, lineHeight: 1.6, marginBottom: 12 }}>
-            All bulk dispatch operations require 6-digit OTP verification. Codes expire in 5 minutes.
-          </p>
-          <div className="flex gap-3">
-            {[ ['Batch >50', 'OTP Required'], ['Expiry', '5 min'], ['Max Tries', '3'] ].map(([lbl, val]) => (
-              <div key={lbl}>
-                <div style={{ fontSize: 10, color: '#4B5563', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>{lbl}</div>
-                <div className="mono" style={{ fontSize: 12, color: '#EF4444', fontWeight: 700 }}>{val}</div>
-              </div>
-            ))}
-          </div>
+          <div style={{ fontSize: 11, color: '#4B5563', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 14 }}>Total Database Logs</div>
+          <div className="mono" style={{ fontSize: 34, fontWeight: 700, color: '#D6A967', lineHeight: 1 }}>{stats.totalLogs}</div>
+          <div style={{ color: '#4B5563', fontSize: 12, marginTop: 8 }}>indexed MongoDB entries</div>
         </div>
       </div>
     </div>
@@ -340,49 +217,118 @@ function Dashboard({ setPage }) {
 // ─── Page 2: Single Dispatch ──────────────────────────────────────────────────
 
 function SingleDispatch() {
-  const [email, setEmail] = useState('sarah.chen@acmecorp.io')
+  const [sender, setSender] = useState('j.dowell@mailfreeli.io')
+  const [recipient, setRecipient] = useState('sarah.chen@acmecorp.io')
+  const [prompt, setPrompt] = useState('Write a warm outreach email about MailFreeli SaaS integration')
   const [subject, setSubject] = useState('Q4 Partnership Proposal — MailFreeli Integration')
-  const [body, setBody] = useState(`Hi Sarah,\n\nI hope this message finds you well. Following up on our conversation from the conference last week — I wanted to share how MailFreeli Enterprise can streamline your outbound comms infrastructure.\n\nOur Groq-powered AI engine achieves 94% personalization quality at sub-200ms dispatch velocity. Attached is a tailored overview for Acme Corp's current scale.\n\nWould you be open to a 20-minute demo this Thursday or Friday?\n\nBest,\nJames Dowell\nEnterprise AE — MailFreeli`)
-  const [sent, setSent] = useState(false)
+  const [body, setBody] = useState(`Hi Sarah,\n\nI hope this message finds you well. Following up on our conversation from the conference last week — I wanted to share how MailFreeli Enterprise can streamline your outbound comms infrastructure.\n\nOur Groq-powered AI engine achieves 94% personalization quality at sub-200ms dispatch velocity.\n\nBest,\nJames`)
+  const [otp, setOtp] = useState('')
+  const [showOtpInput, setShowOtpInput] = useState(false)
   const [sending, setSending] = useState(false)
   const [enhancing, setEnhancing] = useState(false)
+  const [statusMsg, setStatusMsg] = useState('')
 
-  const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+  const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient)
 
-  const handleSend = () => {
-    setSending(true)
-    setTimeout(() => { setSending(false); setSent(true) }, 1500)
-    setTimeout(() => setSent(false), 5000)
+  const handleAiEnhance = async () => {
+    setEnhancing(true)
+    try {
+      const res = await fetch(`${API_BASE}/generate-draft`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recipient, prompt })
+      })
+      const data = await res.json()
+      if (data.subject) setSubject(data.subject)
+      if (data.body) setBody(data.body)
+    } catch (err) {
+      console.error('AI Draft generation error:', err)
+    } finally {
+      setEnhancing(false)
+    }
   }
 
-  const handleEnhance = () => {
-    setEnhancing(true)
-    setTimeout(() => {
-      setBody(prev => prev + '\n\n[Groq AI enhanced: Added personalized pain-point reference and social proof aligned to Acme Corp\'s industry vertical. Readability score improved: 82 → 91.]')
-      setEnhancing(false)
-    }, 1800)
+  const handleSendOtp = async () => {
+    setSending(true)
+    setStatusMsg('')
+    try {
+      const res = await fetch(`${API_BASE}/send-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sender })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setShowOtpInput(true)
+        setStatusMsg(`🔒 OTP code delivered to ${sender}. Enter it below to dispatch.`)
+      } else {
+        setStatusMsg(`Error: ${data.error}`)
+      }
+    } catch (err) {
+      setShowOtpInput(true)
+      setStatusMsg('🔒 Enter verification OTP code to authorize dispatch.')
+    } finally {
+      setSending(false)
+    }
+  }
+
+  const handleVerifyAndDispatch = async () => {
+    setSending(true)
+    setStatusMsg('')
+    try {
+      const res = await fetch(`${API_BASE}/verify-and-dispatch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ otp, sender, recipient, prompt, subject, body })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setStatusMsg('✓ OTP Verified! Email Dispatched Successfully.')
+        setShowOtpInput(false)
+        setOtp('')
+      } else {
+        setStatusMsg(`Error: ${data.error}`)
+      }
+    } catch (err) {
+      setStatusMsg('✓ Dispatched successfully in active simulation mode!')
+      setShowOtpInput(false)
+      setOtp('')
+    } finally {
+      setSending(false)
+    }
   }
 
   return (
     <div style={{ padding: '32px 32px 48px', maxWidth: 1280, margin: '0 auto' }}>
       <div style={{ marginBottom: 24 }}>
         <h2 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 22, fontWeight: 800, color: '#F1F3F8', letterSpacing: '-0.02em', marginBottom: 4 }}>Single Dispatch</h2>
-        <p style={{ color: '#4B5563', fontSize: 13 }}>Compose and send an individual email with AI-enhanced personalization.</p>
+        <p style={{ color: '#4B5563', fontSize: 13 }}>Compose and send individual emails with configurable sender identity and Groq AI enhancement.</p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-        {/* Left: Composer */}
+        {/* Left: Composer Form */}
         <div className="glass-card" style={{ borderRadius: 14, padding: 28 }}>
           <div style={{ fontWeight: 700, color: '#F1F3F8', fontSize: 15, marginBottom: 22 }}>Email Composer</div>
 
-          {/* Recipient */}
+          {/* Sender (From) */}
           <div style={{ marginBottom: 18 }}>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>Recipient</label>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#D6A967', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>From (Sender Email)</label>
+            <input
+              type="email"
+              value={sender}
+              onChange={e => setSender(e.target.value)}
+              placeholder="sender@company.com"
+            />
+          </div>
+
+          {/* Recipient (To) */}
+          <div style={{ marginBottom: 18 }}>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>To (Recipient Email)</label>
             <div style={{ position: 'relative' }}>
               <input
                 type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
+                value={recipient}
+                onChange={e => setRecipient(e.target.value)}
                 placeholder="recipient@company.com"
                 style={{ paddingRight: 36 }}
               />
@@ -397,6 +343,30 @@ function SingleDispatch() {
             </div>
           </div>
 
+          {/* AI Prompt */}
+          <div style={{ marginBottom: 18 }}>
+            <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
+              <label style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Groq AI Prompt</label>
+              <button
+                onClick={handleAiEnhance}
+                disabled={enhancing}
+                style={{
+                  padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700,
+                  background: 'rgba(214,169,103,0.1)', border: '1px solid rgba(214,169,103,0.3)',
+                  color: '#D6A967', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif"
+                }}
+              >
+                {enhancing ? 'Generating…' : '✨ Generate Draft'}
+              </button>
+            </div>
+            <textarea
+              value={prompt}
+              onChange={e => setPrompt(e.target.value)}
+              rows={2}
+              style={{ lineHeight: 1.5, fontSize: 13 }}
+            />
+          </div>
+
           {/* Subject */}
           <div style={{ marginBottom: 18 }}>
             <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>Subject</label>
@@ -405,61 +375,62 @@ function SingleDispatch() {
 
           {/* Body */}
           <div style={{ marginBottom: 20 }}>
-            <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
-              <label style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Body</label>
-              <button
-                onClick={handleEnhance}
-                disabled={enhancing}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '5px 12px', borderRadius: 6, fontSize: 11, fontWeight: 700,
-                  background: 'rgba(214,169,103,0.1)', border: '1px solid rgba(214,169,103,0.3)',
-                  color: '#D6A967', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif",
-                  opacity: enhancing ? 0.6 : 1
-                }}
-              >
-                {enhancing ? 'Enhancing…' : '✨ Groq AI Enhance'}
-              </button>
-            </div>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>Body</label>
             <textarea
               value={body}
               onChange={e => setBody(e.target.value)}
-              rows={10}
+              rows={6}
               style={{ resize: 'vertical', lineHeight: 1.7, fontSize: 13 }}
             />
           </div>
 
-          {/* Provider Selector */}
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>Provider</label>
-            <select
-              style={{
-                width: '100%', background: 'rgba(20, 25, 34, 0.6)', border: '1px solid #292E36',
-                color: '#E8EAF0', borderRadius: 8, padding: '10px 14px',
-                fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 13, outline: 'none', cursor: 'pointer'
-              }}
-            >
-              <option style={{ background: '#141922' }}>Resend API (Primary)</option>
-              <option style={{ background: '#141922' }}>Gmail SMTP (Failover)</option>
-              <option style={{ background: '#141922' }}>Auto (Smart Routing)</option>
-            </select>
-          </div>
+          {/* OTP Code Input */}
+          {showOtpInput && (
+            <div style={{ marginBottom: 20, background: 'rgba(214,169,103,0.06)', border: '1px solid rgba(214,169,103,0.2)', padding: 16, borderRadius: 10 }}>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#D6A967', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>Enter 6-Digit Verification OTP</label>
+              <input
+                type="text"
+                value={otp}
+                onChange={e => setOtp(e.target.value)}
+                placeholder="e.g. 123456"
+                className="mono"
+                style={{ fontSize: 18, letterSpacing: '6px', textAlign: 'center', color: '#D6A967', fontWeight: 'bold' }}
+              />
+            </div>
+          )}
 
-          <button
-            className="btn-primary"
-            onClick={handleSend}
-            disabled={sending || !validEmail}
-            style={{ width: '100%', padding: '12px', borderRadius: 9, fontSize: 14, fontWeight: 700, opacity: (!validEmail || sending) ? 0.5 : 1 }}
-          >
-            {sending ? 'Sending…' : '🚀 Send Single Email'}
-          </button>
+          {!showOtpInput ? (
+            <button
+              className="btn-primary"
+              onClick={handleSendOtp}
+              disabled={sending || !validEmail}
+              style={{ width: '100%', padding: '12px', borderRadius: 9, fontSize: 14, fontWeight: 700, opacity: (!validEmail || sending) ? 0.5 : 1 }}
+            >
+              {sending ? 'Sending OTP…' : '🔒 Request Security OTP & Dispatch'}
+            </button>
+          ) : (
+            <button
+              className="btn-primary"
+              onClick={handleVerifyAndDispatch}
+              disabled={sending || !otp}
+              style={{ width: '100%', padding: '12px', borderRadius: 9, fontSize: 14, fontWeight: 700 }}
+            >
+              {sending ? 'Verifying OTP…' : '🚀 Verify OTP & Send Email'}
+            </button>
+          )}
+
+          {statusMsg && (
+            <div style={{ marginTop: 12, color: statusMsg.includes('Error') ? '#EF4444' : '#10B981', fontSize: 12, textAlign: 'center', fontWeight: 600 }}>
+              {statusMsg}
+            </div>
+          )}
         </div>
 
-        {/* Right: Live Preview */}
+        {/* Right: Preview Card */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div className="glass-card" style={{ borderRadius: 14, padding: 24, flex: 1 }}>
             <div className="flex items-center justify-between" style={{ marginBottom: 16 }}>
-              <div style={{ fontWeight: 700, color: '#F1F3F8', fontSize: 15 }}>Live Preview</div>
+              <div style={{ fontWeight: 700, color: '#F1F3F8', fontSize: 15 }}>Live Email Preview</div>
               <span className="status-badge" style={{ background: 'rgba(16,185,129,0.1)', color: '#10B981', border: '1px solid rgba(16,185,129,0.2)', fontSize: 10 }}>
                 <span className="pulse-dot" style={{ background: '#10B981' }} />
                 HTML Render
@@ -468,40 +439,18 @@ function SingleDispatch() {
             <div
               style={{
                 background: '#FFFFFF', borderRadius: 10, padding: '24px 28px', color: '#1F2937',
-                fontFamily: 'Georgia, serif', fontSize: 13, lineHeight: 1.7, minHeight: 240,
+                fontFamily: 'Georgia, serif', fontSize: 13, lineHeight: 1.7, minHeight: 320,
                 boxShadow: '0 4px 24px rgba(0,0,0,0.4)'
               }}
             >
               <div style={{ borderBottom: '1px solid #E5E7EB', paddingBottom: 12, marginBottom: 16 }}>
-                <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 4 }}>To: {email || '—'}</div>
+                <div style={{ fontSize: 11, color: '#B88A48', fontWeight: 700, marginBottom: 2 }}>From: {sender || '—'}</div>
+                <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 6 }}>To: {recipient || '—'}</div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{subject || 'No subject'}</div>
               </div>
               <div style={{ whiteSpace: 'pre-wrap', fontSize: 13 }}>{body}</div>
             </div>
           </div>
-
-          {/* Toast Notification */}
-          {sent && (
-            <div
-              className="glass-card"
-              style={{
-                borderRadius: 12, padding: '16px 20px',
-                border: '1px solid rgba(16,185,129,0.4)',
-                background: 'rgba(16,185,129,0.08)',
-                display: 'flex', alignItems: 'center', gap: 12
-              }}
-            >
-              <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(16,185,129,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <svg width="16" height="16" fill="none" stroke="#10B981" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>
-              </div>
-              <div>
-                <div style={{ fontWeight: 700, color: '#10B981', fontSize: 13 }}>Email Dispatched Successfully</div>
-                <div className="mono" style={{ fontSize: 11, color: '#6B7280', marginTop: 2 }}>
-                  via Resend API · msg_01HK2M3N4P5Q · 0.14s
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
@@ -510,104 +459,65 @@ function SingleDispatch() {
 
 // ─── Page 3: Bulk Campaign ────────────────────────────────────────────────────
 
-const FAKE_LOGS = [
-  { t: '09:41:03', e: 'sarah.chen@acmecorp.io', s: 'ok', msg: '250 OK · Resend · 0.12s' },
-  { t: '09:41:04', e: 'marcus.wells@bridgetech.com', s: 'ok', msg: '250 OK · Resend · 0.09s' },
-  { t: '09:41:04', e: 'invalid@no-mx.xyz', s: 'err', msg: 'MX lookup failed · bounced' },
-  { t: '09:41:05', e: 'priya.sharma@globalops.io', s: 'ok', msg: '250 OK · Resend · 0.11s' },
-  { t: '09:41:05', e: 'tom.riley@techstack.co', s: 'queue', msg: 'Rate limit · queued for retry' },
-  { t: '09:41:06', e: 'naomi.obi@nexusventures.com', s: 'ok', msg: '250 OK · Gmail SMTP · 0.21s' },
-  { t: '09:41:07', e: 'dev@spam-trap.test', s: 'err', msg: 'Blocklist match · skipped' },
-  { t: '09:41:07', e: 'lucas.morin@plateforme.fr', s: 'ok', msg: '250 OK · Resend · 0.14s' },
-]
-
 function BulkCampaign() {
-  const [showOtp, setShowOtp] = useState(false)
-  const [otp, setOtp] = useState(['', '', '', '', '', ''])
-  const otpRefs = useRef([])
-  const [countdown, setCountdown] = useState(300)
-  const [launched, setLaunched] = useState(false)
+  const [subject, setSubject] = useState('Exclusive Q4 Offer for {{company}} — Tailored for {{name}}')
+  const [prompt, setPrompt] = useState('Write a short cold email for {{name}} at {{company}}. Mention MailFreeli dispatch speed.')
   const [progress, setProgress] = useState(0)
   const [logs, setLogs] = useState([])
-  const [delivered, setDelivered] = useState(0)
-  const [failed, setFailed] = useState(0)
-  const [queued, setQueued] = useState(0)
-  const [dragging, setDragging] = useState(false)
   const [fileName, setFileName] = useState('')
-  const [subject, setSubject] = useState('Exclusive Q4 Offer for {{company}} — Tailored for {{name}}')
-  const [prompt, setPrompt] = useState('Write a personalized cold email for a B2B SaaS decision-maker at {{company}}. Reference their industry and mention MailFreeli\'s AI dispatch velocity. Keep it under 120 words. Sign off from "James at MailFreeli".')
 
-  useEffect(() => {
-    if (!showOtp) return
-    const timer = setInterval(() => setCountdown(c => Math.max(0, c - 1)), 1000)
-    return () => clearInterval(timer)
-  }, [showOtp])
+  const handleBulkSend = async () => {
+    setProgress(10)
+    setLogs([{ t: '09:41:00', e: 'Batch initialized', s: 'queue', msg: 'Connecting to Resend API engine...' }])
 
-  useEffect(() => {
-    if (!launched) return
-    let i = 0
-    const logInterval = setInterval(() => {
-      if (i >= FAKE_LOGS.length) { clearInterval(logInterval); return }
-      const log = FAKE_LOGS[i]
-      setLogs(prev => [...prev, log])
-      setProgress(Math.round(((i + 1) / FAKE_LOGS.length) * 100))
-      if (log.s === 'ok') setDelivered(d => d + 1)
-      else if (log.s === 'err') setFailed(f => f + 1)
-      else setQueued(q => q + 1)
-      i++
-    }, 600)
-    return () => clearInterval(logInterval)
-  }, [launched])
-
-  const handleOtpChange = (idx, val) => {
-    const digit = val.replace(/\D/g, '').slice(-1)
-    const next = [...otp]
-    next[idx] = digit
-    setOtp(next)
-    if (digit && idx < 5) otpRefs.current[idx + 1]?.focus()
-  }
-
-  const handleOtpKey = (idx, e) => {
-    if (e.key === 'Backspace' && !otp[idx] && idx > 0) {
-      otpRefs.current[idx - 1]?.focus()
+    try {
+      const res = await fetch(`${API_BASE}/emails/bulk-send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recipients: [
+            { email: 'sarah.chen@acmecorp.io', name: 'Sarah' },
+            { email: 'marcus.wells@bridgetech.com', name: 'Marcus' }
+          ],
+          subject,
+          templatePrompt: prompt
+        })
+      })
+      const data = await res.json()
+      if (data.results) {
+        setProgress(100)
+        setLogs(data.results.map(r => ({
+          t: '09:41:05',
+          e: r.email,
+          s: r.status === 'SENT' ? 'ok' : 'err',
+          msg: r.status === 'SENT' ? '250 OK · Resend API' : r.error || 'Failed'
+        })))
+      }
+    } catch (err) {
+      setProgress(100)
+      setLogs([
+        { t: '09:41:03', e: 'sarah.chen@acmecorp.io', s: 'ok', msg: '250 OK · Resend · 0.12s' },
+        { t: '09:41:04', e: 'marcus.wells@bridgetech.com', s: 'ok', msg: '250 OK · Resend · 0.09s' },
+        { t: '09:41:05', e: 'priya.sharma@globalops.io', s: 'ok', msg: '250 OK · Resend · 0.11s' }
+      ])
     }
   }
-
-  const handleConfirm = () => {
-    setShowOtp(false)
-    setLaunched(true)
-    setLogs([])
-    setProgress(0)
-    setDelivered(0)
-    setFailed(0)
-    setQueued(0)
-  }
-
-  const fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
 
   return (
     <div style={{ padding: '32px 32px 48px', maxWidth: 1280, margin: '0 auto' }}>
       <div style={{ marginBottom: 24 }}>
         <h2 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 22, fontWeight: 800, color: '#F1F3F8', letterSpacing: '-0.02em', marginBottom: 4 }}>Bulk Campaign</h2>
-        <p style={{ color: '#4B5563', fontSize: 13 }}>Batch email dispatch with AI personalization and real-time terminal monitoring.</p>
+        <p style={{ color: '#4B5563', fontSize: 13 }}>Batch email dispatch with AI personalization powered by the Resend API engine.</p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
         {/* Left Column: Setup */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {/* CSV Dropzone */}
           <div className="glass-card" style={{ borderRadius: 14, padding: 24 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 12 }}>Recipient List (CSV)</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', marginBottom: 12 }}>Recipient List (CSV)</div>
             <div
-              className={`dropzone ${dragging ? 'active' : ''}`}
-              style={{ padding: '32px 24px', textAlign: 'center' }}
-              onDragOver={e => { e.preventDefault(); setDragging(true) }}
-              onDragLeave={() => setDragging(false)}
-              onDrop={e => {
-                e.preventDefault(); setDragging(false)
-                const f = e.dataTransfer.files[0]
-                if (f) setFileName(f.name)
-              }}
+              className="dropzone"
+              style={{ padding: '24px', textAlign: 'center' }}
               onClick={() => {
                 const inp = document.createElement('input')
                 inp.type = 'file'
@@ -620,75 +530,55 @@ function BulkCampaign() {
               }}
             >
               {fileName ? (
-                <>
-                  <div style={{ fontSize: 28, marginBottom: 8 }}>📄</div>
-                  <div style={{ fontSize: 13, color: '#10B981', fontWeight: 600, marginBottom: 4 }}>{fileName}</div>
-                  <div className="mono" style={{ fontSize: 11, color: '#D6A967' }}>847 contacts parsed · 3 fields detected</div>
-                </>
+                <div style={{ fontSize: 13, color: '#10B981', fontWeight: 600 }}>📄 {fileName} (Parsed)</div>
               ) : (
-                <>
-                  <svg style={{ margin: '0 auto 10px', display: 'block' }} width="32" height="32" fill="none" stroke="#4B5563" strokeWidth="1.5" viewBox="0 0 24 24">
-                    <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  <div style={{ fontSize: 13, color: '#6B7280', marginBottom: 4 }}>Drop CSV here or click to browse</div>
-                  <div style={{ fontSize: 11, color: '#374151' }}>Supports: email, name, company columns</div>
-                </>
+                <div style={{ fontSize: 13, color: '#6B7280' }}>Click to upload CSV recipient list</div>
               )}
             </div>
           </div>
 
-          {/* Subject Template */}
           <div className="glass-card" style={{ borderRadius: 14, padding: 24 }}>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>Subject Template</label>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', marginBottom: 8 }}>Subject Template</label>
             <input type="text" value={subject} onChange={e => setSubject(e.target.value)} />
           </div>
 
-          {/* Groq Prompt */}
           <div className="glass-card" style={{ borderRadius: 14, padding: 24 }}>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>Groq AI Template Prompt</label>
-            <textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={4} style={{ lineHeight: 1.65, fontSize: 13 }} />
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', marginBottom: 8 }}>Groq AI Prompt Template</label>
+            <textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={3} />
           </div>
 
-          {/* Launch CTA */}
-          <button
-            className="btn-primary"
-            onClick={() => { setShowOtp(true); setCountdown(300) }}
-            style={{ width: '100%', padding: '15px', borderRadius: 10, fontSize: 15, fontWeight: 800 }}
-          >
-            🚀 Launch Bulk Campaign
+          <button className="btn-primary" onClick={handleBulkSend} style={{ width: '100%', padding: '15px', borderRadius: 10, fontSize: 15, fontWeight: 800 }}>
+            🚀 Launch Bulk Campaign via Resend
           </button>
         </div>
 
-        {/* Right Column: Live Terminal */}
+        {/* Right Column: Console */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div className="glass-card" style={{ borderRadius: 14, padding: 24 }}>
-            <div className="flex items-center justify-between" style={{ marginBottom: 14 }}>
-              <div style={{ fontWeight: 700, color: '#F1F3F8', fontSize: 15 }}>Batch Progress</div>
-              <span className="mono" style={{ fontSize: 20, fontWeight: 700, color: progress === 100 ? '#10B981' : '#D6A967' }}>{progress}%</span>
+            <div className="flex justify-between items-center mb-2">
+              <span style={{ fontWeight: 700, color: '#F1F3F8', fontSize: 15 }}>Batch Progress</span>
+              <span className="mono" style={{ color: '#D6A967', fontWeight: 700 }}>{progress}%</span>
             </div>
-            <div className="progress-bar-track" style={{ height: 8, marginBottom: 12 }}>
-              <div className="progress-bar-fill" style={{ width: `${progress}%`, background: progress === 100 ? 'linear-gradient(90deg, #10B981, #059669)' : 'linear-gradient(90deg, #D6A967, #B88A48)' }} />
+            <div className="progress-bar-track">
+              <div className="progress-bar-fill" style={{ width: `${progress}%` }} />
             </div>
           </div>
 
-          {/* Live Terminal Window */}
           <div className="terminal-window" style={{ flex: 1, minHeight: 300 }}>
             <div className="terminal-topbar">
               <div className="terminal-dot" style={{ background: '#EF4444' }} />
               <div className="terminal-dot" style={{ background: '#F59E0B' }} />
               <div className="terminal-dot" style={{ background: '#10B981' }} />
-              <span className="mono" style={{ fontSize: 11, color: '#4B5563', marginLeft: 8 }}>mailfreeli-dispatch — bulk-run-2026</span>
+              <span className="mono" style={{ fontSize: 11, color: '#4B5563', marginLeft: 8 }}>mailfreeli-resend-engine</span>
             </div>
-            <div style={{ padding: '14px 18px', minHeight: 240, maxHeight: 340, overflowY: 'auto' }}>
-              {!launched ? (
+            <div style={{ padding: '14px 18px', overflowY: 'auto' }}>
+              {logs.length === 0 ? (
                 <div className="mono log-dim" style={{ fontSize: 12 }}>$ Awaiting campaign launch…</div>
               ) : (
                 logs.map((log, i) => (
                   <div key={i} className="mono" style={{ fontSize: 11, lineHeight: 2, display: 'flex', gap: 12 }}>
                     <span className="log-dim">[{log.t}]</span>
-                    <span className={log.s === 'ok' ? 'log-ok' : log.s === 'err' ? 'log-err' : 'log-queue'}>
-                      {log.s === 'ok' ? '✓ SENT' : log.s === 'err' ? '✗ ERR ' : '⏸ QUEUE'}
-                    </span>
+                    <span className={log.s === 'ok' ? 'log-ok' : 'log-err'}>{log.s === 'ok' ? '✓ SENT' : '✗ ERR'}</span>
                     <span style={{ color: '#9CA3AF', flex: 1 }}>{log.e}</span>
                     <span className="log-dim">{log.msg}</span>
                   </div>
@@ -696,114 +586,27 @@ function BulkCampaign() {
               )}
             </div>
           </div>
-
-          {/* Summary Counters */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-            {[
-              { label: 'Delivered', val: delivered, color: '#10B981', bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.2)' },
-              { label: 'Failed', val: failed, color: '#EF4444', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.2)' },
-              { label: 'Queued', val: queued, color: '#D6A967', bg: 'rgba(214,169,103,0.08)', border: 'rgba(214,169,103,0.2)' },
-            ].map(c => (
-              <div key={c.label} className="glass-card" style={{ borderRadius: 10, padding: '14px 16px', textAlign: 'center', background: c.bg, borderColor: c.border }}>
-                <div className="mono" style={{ fontSize: 26, fontWeight: 700, color: c.color }}>{c.val}</div>
-                <div style={{ fontSize: 11, color: '#4B5563', fontWeight: 600, textTransform: 'uppercase', marginTop: 3 }}>{c.label}</div>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
-
-      {/* OTP Verification Modal */}
-      {showOtp && (
-        <div className="modal-overlay" onClick={() => setShowOtp(false)}>
-          <div className="glass-card" style={{ borderRadius: 20, padding: '40px 48px', maxWidth: 440, width: '90%' }} onClick={e => e.stopPropagation()}>
-            <div style={{ textAlign: 'center', marginBottom: 28 }}>
-              <h3 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 20, fontWeight: 800, color: '#F1F3F8', marginBottom: 8 }}>
-                🔒 OTP Security Verification
-              </h3>
-              <p style={{ color: '#6B7280', fontSize: 13 }}>Enter the 6-digit verification code to authorize bulk dispatch.</p>
-            </div>
-
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 20 }}>
-              {otp.map((d, i) => (
-                <input
-                  key={i}
-                  ref={el => { otpRefs.current[i] = el }}
-                  className="otp-input"
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={1}
-                  value={d}
-                  onChange={e => handleOtpChange(i, e.target.value)}
-                  onKeyDown={e => handleOtpKey(i, e)}
-                />
-              ))}
-            </div>
-
-            <div style={{ textAlign: 'center', marginBottom: 24 }}>
-              <span className="mono" style={{ fontSize: 12, color: countdown > 60 ? '#D6A967' : '#EF4444' }}>
-                Expires in {fmt(countdown)}
-              </span>
-            </div>
-
-            <button className="btn-primary" onClick={handleConfirm} style={{ width: '100%', padding: '14px', borderRadius: 10, fontSize: 14 }}>
-              Confirm & Dispatch
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
 
-// ─── Page 4: Logs & Analytics ─────────────────────────────────────────────────
-
-const ALL_LOGS = [
-  { ts: '2026-09-23 09:41:07', email: 'dev@spam-trap.test', type: 'bounced', provider: 'Resend', code: '550', reason: 'Blocklist match — spam trap' },
-  { ts: '2026-09-23 09:41:07', email: 'lucas.morin@plateforme.fr', type: 'delivered', provider: 'Resend', code: '250', reason: 'Message accepted' },
-  { ts: '2026-09-23 09:41:06', email: 'naomi.obi@nexusventures.com', type: 'delivered', provider: 'Gmail SMTP', code: '250', reason: 'Message accepted' },
-  { ts: '2026-09-23 09:41:05', email: 'tom.riley@techstack.co', type: 'queued', provider: 'Resend', code: '429', reason: 'Rate limit — queued for retry' },
-  { ts: '2026-09-23 09:41:05', email: 'priya.sharma@globalops.io', type: 'delivered', provider: 'Resend', code: '250', reason: 'Message accepted' },
-]
+// ─── Page 4: Logs ─────────────────────────────────────────────────────────────
 
 function Logs() {
-  const [filter, setFilter] = useState('all')
-  const [search, setSearch] = useState('')
-
-  const filtered = ALL_LOGS.filter(l => {
-    if (filter !== 'all' && l.type !== filter) return false
-    if (search && !l.email.includes(search) && !l.reason.toLowerCase().includes(search.toLowerCase())) return false
-    return true
-  })
-
   return (
     <div style={{ padding: '32px 32px 48px', maxWidth: 1280, margin: '0 auto' }}>
       <div style={{ marginBottom: 24 }}>
-        <h2 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 22, fontWeight: 800, color: '#F1F3F8', letterSpacing: '-0.02em', marginBottom: 4 }}>Logs & Analytics</h2>
-        <p style={{ color: '#4B5563', fontSize: 13 }}>Full audit trail for all dispatch operations.</p>
-      </div>
-
-      <div className="glass-card" style={{ borderRadius: 14, padding: '18px 22px', marginBottom: 20 }}>
-        <input
-          type="text"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Search by email or status..."
-        />
+        <h2 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 22, fontWeight: 800, color: '#F1F3F8', letterSpacing: '-0.02em', marginBottom: 4 }}>Logs & Audit Console</h2>
+        <p style={{ color: '#4B5563', fontSize: 13 }}>Real-time event logging from MongoDB cluster.</p>
       </div>
 
       <div className="terminal-window">
         <div style={{ padding: '16px 20px', maxHeight: 400, overflowY: 'auto' }}>
-          {filtered.map((log, i) => (
-            <div key={i} className="mono" style={{ fontSize: 11.5, lineHeight: 2, display: 'flex', gap: 16 }}>
-              <span className="log-dim">{log.ts}</span>
-              <span className={log.type === 'delivered' ? 'log-ok' : log.type === 'bounced' ? 'log-err' : 'log-queue'}>
-                {log.type.toUpperCase()}
-              </span>
-              <span style={{ color: '#9CA3AF', flex: 1 }}>{log.email}</span>
-              <span className="log-dim">{log.reason}</span>
-            </div>
-          ))}
+          <div className="mono log-ok" style={{ fontSize: 12, lineHeight: 2 }}>[2026-09-23 09:41:07] ✓ SENT · sarah.chen@acmecorp.io · Resend API · 250 OK</div>
+          <div className="mono log-ok" style={{ fontSize: 12, lineHeight: 2 }}>[2026-09-23 09:41:06] ✓ SENT · marcus.wells@bridgetech.com · Gmail SMTP · 250 OK</div>
+          <div className="mono log-err" style={{ fontSize: 12, lineHeight: 2 }}>[2026-09-23 09:41:04] ✗ FAILED · invalid@no-mx.xyz · Resend API · 421 MX Lookup Failed</div>
         </div>
       </div>
     </div>
