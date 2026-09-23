@@ -44,7 +44,6 @@ const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString()
 // HTML TEMPLATES
 const generateWelcomeOtpHtml = (otp, targetEmail) => `
   <div style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #090B0F; color: #F5F2EA; padding: 40px 20px; border-radius: 16px; max-width: 540px; margin: 0 auto; border: 1px solid #292E36;">
-    
     <!-- HEADER LOGO -->
     <div style="text-align: center; margin-bottom: 24px;">
       <div style="display: inline-block; width: 44px; height: 44px; line-height: 44px; border-radius: 12px; background: linear-gradient(135deg, #D6A967, #B88A48); color: #090B0F; font-weight: 800; font-size: 22px;">M</div>
@@ -374,7 +373,6 @@ app.post('/api/emails/bulk-send', async (req, res) => {
   console.log(`[RESEND BATCH STARTED] Processing ${recipients.length} recipients...`);
   const results = [];
 
-  // Default testing sender address provided by Resend before custom domain verification
   const fromAddress = 'MailFreeli <onboarding@resend.dev>';
 
   for (const recipientObj of recipients) {
@@ -424,7 +422,6 @@ app.post('/api/emails/bulk-send', async (req, res) => {
       results.push({ email, status: 'SENT', resendId: response.data.id });
       console.log(`[RESEND SENT] Delivered to ${email} (ID: ${response.data.id})`);
 
-      // Log to MongoDB
       try {
         await Email.create({
           sender: 'onboarding@resend.dev',
