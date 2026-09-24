@@ -137,24 +137,15 @@ function Dashboard({ setPage }) {
               AI Engine
             </h1>
             <p style={{ color: '#6B7280', fontSize: 14, lineHeight: 1.7, marginBottom: 20 }}>
-              Multi-provider SMTP orchestration powered by <span style={{ color: '#D6A967' }}>Groq LLaMA-3.3</span> for hyper-personalized outbound. Intelligent failover across Resend, Gmail SMTP, and custom providers — with sub-200ms dispatch velocity and OTP-secured batch authorization.
+              Enterprise-grade SMTP orchestration engine powered by <span style={{ color: '#D6A967' }}>Groq LLaMA-3.3</span> for instant AI draft generation. Seamlessly manage single dispatches and bulk campaigns with intelligent provider routing, OTP security verification, and real-time MongoDB audit logging.
             </p>
             <div className="flex items-center gap-3">
               <button
                 className="btn-primary"
-                onClick={() => setPage('bulk')}
-                style={{ padding: '9px 22px', borderRadius: 8, fontSize: 13, fontWeight: 700 }}
+                onClick={() => setPage('single')}
+                style={{ padding: '10px 24px', borderRadius: 8, fontSize: 13, fontWeight: 700 }}
               >
                 Open Campaign Setup
-              </button>
-              <button
-                style={{
-                  padding: '9px 22px', borderRadius: 8, fontSize: 13, fontWeight: 600,
-                  background: 'rgba(255,255,255,0.04)', border: '1px solid #292E36',
-                  color: '#9CA3AF', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif"
-                }}
-              >
-                View API Docs
               </button>
             </div>
           </div>
