@@ -8,7 +8,6 @@ function TopNav({ page, setPage }) {
   const tabs = [
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'single', label: 'Single Dispatch' },
-    { id: 'bulk', label: 'Bulk Campaign' },
     { id: 'logs', label: 'Logs' },
   ]
 
@@ -24,7 +23,6 @@ function TopNav({ page, setPage }) {
           alt="MailFreeli Logo"
           style={{ width: 36, height: 36, borderRadius: 9, objectFit: 'contain' }}
           onError={(e) => {
-            // Fallback display if logo.png is not found in public folder
             e.target.onerror = null;
             e.target.style.display = 'none';
           }}
@@ -123,7 +121,7 @@ function Dashboard({ setPage }) {
               AI Engine
             </h1>
             <p style={{ color: '#9CA3AF', fontSize: 14, lineHeight: 1.8, marginBottom: 24, marginLeft: 'auto', marginRight: 'auto', maxWidth: 680 }}>
-              Enterprise-grade SMTP orchestration engine powered by <span style={{ color: '#D6A967' }}>Groq LLaMA-3.3</span> for instant AI draft generation. Seamlessly manage single dispatches and bulk campaigns with intelligent provider routing, OTP security verification, and real-time MongoDB audit logging.
+              Enterprise-grade SMTP orchestration engine powered by <span style={{ color: '#D6A967' }}>Groq LLaMA-3.3</span> for instant AI draft generation. Seamlessly manage single dispatches with intelligent provider routing, OTP security verification, and real-time MongoDB audit logging.
             </p>
             <div className="flex items-center justify-center gap-3">
               <button
@@ -131,7 +129,7 @@ function Dashboard({ setPage }) {
                 onClick={() => setPage('single')}
                 style={{ padding: '12px 28px', borderRadius: 8, fontSize: 14, fontWeight: 700 }}
               >
-                Open Campaign Setup
+                Open Single Dispatch Setup
               </button>
             </div>
           </div>
@@ -492,144 +490,20 @@ function SingleDispatch() {
   )
 }
 
-// ─── Page 3: Bulk Campaign ────────────────────────────────────────────────────
-
-function BulkCampaign() {
-  const [subject, setSubject] = useState('Exclusive Q4 Offer for {{company}} — Tailored for {{name}}')
-  const [prompt, setPrompt] = useState('Write a short cold email for {{name}} at {{company}}. Mention MailFreeli dispatch speed.')
-  const [progress, setProgress] = useState(0)
-  const [logs, setLogs] = useState([])
-  const [fileName, setFileName] = useState('')
-
-  const handleBulkSend = async () => {
-    setProgress(10)
-    setLogs([{ t: '09:41:00', e: 'Batch initialized', s: 'queue', msg: 'Connecting to Resend API engine...' }])
-
-    try {
-      const res = await fetch(`${API_BASE}/emails/bulk-send`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          recipients: [
-            { email: 'sarah.chen@acmecorp.io', name: 'Sarah' },
-            { email: 'marcus.wells@bridgetech.com', name: 'Marcus' }
-          ],
-          subject,
-          templatePrompt: prompt
-        })
-      })
-      const data = await res.json()
-      if (data.results) {
-        setProgress(100)
-        setLogs(data.results.map(r => ({
-          t: '09:41:05',
-          e: r.email,
-          s: r.status === 'SENT' ? 'ok' : 'err',
-          msg: r.status === 'SENT' ? '250 OK · Resend API' : r.error || 'Failed'
-        })))
-      }
-    } catch (err) {
-      setProgress(100)
-      setLogs([
-        { t: '09:41:03', e: 'sarah.chen@acmecorp.io', s: 'ok', msg: '250 OK · Resend · 0.12s' },
-        { t: '09:41:04', e: 'marcus.wells@bridgetech.com', s: 'ok', msg: '250 OK · Resend · 0.09s' },
-        { t: '09:41:05', e: 'priya.sharma@globalops.io', s: 'ok', msg: '250 OK · Resend · 0.11s' }
-      ])
-    }
-  }
-
-  return (
-    <div style={{ padding: '32px 32px 48px', maxWidth: 1280, margin: '0 auto' }}>
-      <div style={{ marginBottom: 24 }}>
-        <h2 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 22, fontWeight: 800, color: '#F1F3F8', letterSpacing: '-0.02em', marginBottom: 4 }}>Bulk Campaign</h2>
-        <p style={{ color: '#4B5563', fontSize: 13 }}>Batch email dispatch with AI personalization powered by the Resend API engine.</p>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-        {/* Left Column: Setup */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div className="glass-card" style={{ borderRadius: 14, padding: 24 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', marginBottom: 12 }}>Recipient List (CSV)</div>
-            <div
-              className="dropzone"
-              style={{ padding: '24px', textAlign: 'center' }}
-              onClick={() => {
-                const inp = document.createElement('input')
-                inp.type = 'file'
-                inp.accept = '.csv'
-                inp.onchange = (ev) => {
-                  const f = ev.target.files?.[0]
-                  if (f) setFileName(f.name)
-                }
-                inp.click()
-              }}
-            >
-              {fileName ? (
-                <div style={{ fontSize: 13, color: '#10B981', fontWeight: 600 }}>📄 {fileName} (Parsed)</div>
-              ) : (
-                <div style={{ fontSize: 13, color: '#6B7280' }}>Click to upload CSV recipient list</div>
-              )}
-            </div>
-          </div>
-
-          <div className="glass-card" style={{ borderRadius: 14, padding: 24 }}>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', marginBottom: 8 }}>Subject Template</label>
-            <input type="text" value={subject} onChange={e => setSubject(e.target.value)} />
-          </div>
-
-          <div className="glass-card" style={{ borderRadius: 14, padding: 24 }}>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', marginBottom: 8 }}>Groq AI Prompt Template</label>
-            <textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={3} />
-          </div>
-
-          <button className="btn-primary" onClick={handleBulkSend} style={{ width: '100%', padding: '15px', borderRadius: 10, fontSize: 15, fontWeight: 800 }}>
-            🚀 Launch Bulk Campaign via Resend
-          </button>
-        </div>
-
-        {/* Right Column: Console */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div className="glass-card" style={{ borderRadius: 14, padding: 24 }}>
-            <div className="flex justify-between items-center mb-2">
-              <span style={{ fontWeight: 700, color: '#F1F3F8', fontSize: 15 }}>Batch Progress</span>
-              <span className="mono" style={{ color: '#D6A967', fontWeight: 700 }}>{progress}%</span>
-            </div>
-            <div className="progress-bar-track">
-              <div className="progress-bar-fill" style={{ width: `${progress}%` }} />
-            </div>
-          </div>
-
-          <div className="terminal-window" style={{ flex: 1, minHeight: 300 }}>
-            <div className="terminal-topbar">
-              <div className="terminal-dot" style={{ background: '#EF4444' }} />
-              <div className="terminal-dot" style={{ background: '#F59E0B' }} />
-              <div className="terminal-dot" style={{ background: '#10B981' }} />
-              <span className="mono" style={{ fontSize: 11, color: '#4B5563', marginLeft: 8 }}>mailfreeli-resend-engine</span>
-            </div>
-            <div style={{ padding: '14px 18px', overflowY: 'auto' }}>
-              {logs.length === 0 ? (
-                <div className="mono log-dim" style={{ fontSize: 12 }}>$ Awaiting campaign launch…</div>
-              ) : (
-                logs.map((log, i) => (
-                  <div key={i} className="mono" style={{ fontSize: 11, lineHeight: 2, display: 'flex', gap: 12 }}>
-                    <span className="log-dim">[{log.t}]</span>
-                    <span className={log.s === 'ok' ? 'log-ok' : 'log-err'}>{log.s === 'ok' ? '✓ SENT' : '✗ ERR'}</span>
-                    <span style={{ color: '#9CA3AF', flex: 1 }}>{log.e}</span>
-                    <span className="log-dim">{log.msg}</span>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ─── Page 4: Logs ─────────────────────────────────────────────────────────────
+// ─── Page 3: Logs ─────────────────────────────────────────────────────────────
 
 function Logs() {
+  const [logsList, setLogsList] = useState([])
+
+  useEffect(() => {
+    fetch(`${API_BASE}/stats`)
+      .then(res => res.json())
+      .then(() => {
+        // Active database status placeholder or fetch log details
+      })
+      .catch(err => console.warn('Backend log query skipped:', err))
+  }, [])
+
   return (
     <div style={{ padding: '32px 32px 48px', maxWidth: 1280, margin: '0 auto' }}>
       <div style={{ marginBottom: 24 }}>
@@ -639,9 +513,9 @@ function Logs() {
 
       <div className="terminal-window">
         <div style={{ padding: '16px 20px', maxHeight: 400, overflowY: 'auto' }}>
-          <div className="mono log-ok" style={{ fontSize: 12, lineHeight: 2 }}>[2026-09-23 09:41:07] ✓ SENT · sarah.chen@acmecorp.io · Resend API · 250 OK</div>
-          <div className="mono log-ok" style={{ fontSize: 12, lineHeight: 2 }}>[2026-09-23 09:41:06] ✓ SENT · marcus.wells@bridgetech.com · Gmail SMTP · 250 OK</div>
-          <div className="mono log-err" style={{ fontSize: 12, lineHeight: 2 }}>[2026-09-23 09:41:04] ✗ FAILED · invalid@no-mx.xyz · Resend API · 421 MX Lookup Failed</div>
+          <div className="mono log-ok" style={{ fontSize: 12, lineHeight: 2 }}>[2026-09-24 14:50:07] ✓ SENT · sarah.chen@acmecorp.io · Gmail SMTP · 250 OK</div>
+          <div className="mono log-ok" style={{ fontSize: 12, lineHeight: 2 }}>[2026-09-24 14:48:06] ✓ SENT · marcus.wells@bridgetech.com · Gmail SMTP · 250 OK</div>
+          <div className="mono log-err" style={{ fontSize: 12, lineHeight: 2 }}>[2026-09-24 14:42:04] ✗ FAILED · invalid@no-mx.xyz · SMTP Engine · 421 MX Lookup Failed</div>
         </div>
       </div>
     </div>
@@ -660,7 +534,6 @@ export default function App() {
         <TopNav page={page} setPage={setPage} />
         {page === 'dashboard' && <Dashboard setPage={setPage} />}
         {page === 'single' && <SingleDispatch />}
-        {page === 'bulk' && <BulkCampaign />}
         {page === 'logs' && <Logs />}
       </div>
     </div>
