@@ -395,26 +395,15 @@ function SingleDispatch() {
             <textarea
               value={prompt}
               onChange={e => setPrompt(e.target.value)}
-              rows={2}
+              rows={3}
               style={{ lineHeight: 1.5, fontSize: 13 }}
             />
           </div>
 
           {/* Subject */}
-          <div style={{ marginBottom: 18 }}>
+          <div style={{ marginBottom: 24 }}>
             <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>Subject</label>
             <input type="text" value={subject} onChange={e => setSubject(e.target.value)} placeholder="Email subject..." />
-          </div>
-
-          {/* Body */}
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>Body</label>
-            <textarea
-              value={body}
-              onChange={e => setBody(e.target.value)}
-              rows={6}
-              style={{ resize: 'vertical', lineHeight: 1.7, fontSize: 13 }}
-            />
           </div>
 
           {/* OTP Code Input */}
@@ -493,17 +482,6 @@ function SingleDispatch() {
 // ─── Page 3: Logs ─────────────────────────────────────────────────────────────
 
 function Logs() {
-  const [logsList, setLogsList] = useState([])
-
-  useEffect(() => {
-    fetch(`${API_BASE}/stats`)
-      .then(res => res.json())
-      .then(() => {
-        // Active database status placeholder or fetch log details
-      })
-      .catch(err => console.warn('Backend log query skipped:', err))
-  }, [])
-
   return (
     <div style={{ padding: '32px 32px 48px', maxWidth: 1280, margin: '0 auto' }}>
       <div style={{ marginBottom: 24 }}>
