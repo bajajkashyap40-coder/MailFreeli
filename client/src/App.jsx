@@ -17,14 +17,18 @@ function TopNav({ page, setPage }) {
       className="glass-card sticky top-0 z-50 flex items-center justify-between px-6"
       style={{ height: 64, borderRadius: 0, borderLeft: 'none', borderRight: 'none', borderTop: 'none' }}
     >
-      {/* Logo */}
+      {/* Brand Logo & Name */}
       <div className="flex items-center gap-3 flex-shrink-0">
-        <div
-          className="gold-gradient flex items-center justify-center font-extrabold text-lg"
-          style={{ width: 36, height: 36, borderRadius: 9, color: '#090B0F', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-        >
-          M
-        </div>
+        <img
+          src="/logo.png"
+          alt="MailFreeli Logo"
+          style={{ width: 36, height: 36, borderRadius: 9, objectFit: 'contain' }}
+          onError={(e) => {
+            // Fallback display if logo.png is not found in public folder
+            e.target.onerror = null;
+            e.target.style.display = 'none';
+          }}
+        />
         <div>
           <div className="font-bold text-white" style={{ fontSize: 16, lineHeight: 1.1, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
             MailFreeli
@@ -52,7 +56,7 @@ function TopNav({ page, setPage }) {
         ))}
       </div>
 
-      {/* Right Cluster */}
+      {/* Right Cluster (API Status Badge) */}
       <div className="flex items-center gap-4 flex-shrink-0">
         <div
           className="status-badge glow-green"
@@ -60,24 +64,6 @@ function TopNav({ page, setPage }) {
         >
           <span className="pulse-dot" style={{ background: '#10B981', color: '#10B981' }} />
           API Engine Online
-        </div>
-        <button
-          className="relative"
-          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid #292E36', borderRadius: 8, padding: '7px 9px', cursor: 'pointer' }}
-        >
-          <svg width="16" height="16" fill="none" stroke="#9CA3AF" strokeWidth="1.8" viewBox="0 0 24 24">
-            <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <span
-            className="absolute"
-            style={{ top: 5, right: 5, width: 7, height: 7, background: '#D6A967', borderRadius: '50%', border: '1.5px solid #090B0F' }}
-          />
-        </button>
-        <div
-          className="gold-gradient flex items-center justify-center font-bold text-sm"
-          style={{ width: 34, height: 34, borderRadius: '50%', color: '#090B0F', cursor: 'pointer' }}
-        >
-          JD
         </div>
       </div>
     </nav>
@@ -475,7 +461,7 @@ function SingleDispatch() {
           )}
         </div>
 
-        {/* Right: Preview Card */}
+        {/* Right: Live Preview Card */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div className="glass-card" style={{ borderRadius: 14, padding: 24, flex: 1 }}>
             <div className="flex items-center justify-between" style={{ marginBottom: 16 }}>
