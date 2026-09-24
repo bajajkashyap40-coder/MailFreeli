@@ -201,6 +201,64 @@ function Dashboard({ setPage }) {
           <div style={{ color: '#4B5563', fontSize: 12, marginTop: 8 }}>indexed MongoDB entries</div>
         </div>
       </div>
+
+      {/* Feature Highlight Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+        {/* Card A: Groq AI */}
+        <div className="glass-card" style={{ borderRadius: 14, padding: '24px', position: 'relative', overflow: 'hidden' }}>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="gold-gradient" style={{ width: 40, height: 40, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              ⚡
+            </div>
+            <div>
+              <div style={{ fontWeight: 700, color: '#F1F3F8', fontSize: 14 }}>Groq AI Engine</div>
+              <div className="mono" style={{ fontSize: 10, color: '#D6A967' }}>LLaMA-3.3-70B</div>
+            </div>
+          </div>
+          <p style={{ color: '#6B7280', fontSize: 13, lineHeight: 1.6, marginBottom: 16 }}>
+            Real-time automated content generation with dynamic field replacement and sub-second generation speeds.
+          </p>
+        </div>
+
+        {/* Card B: Multi-Provider Failover */}
+        <div className="glass-card" style={{ borderRadius: 14, padding: '24px', position: 'relative', overflow: 'hidden' }}>
+          <div className="flex items-center gap-3 mb-4">
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(16,185,129,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              📡
+            </div>
+            <div>
+              <div style={{ fontWeight: 700, color: '#F1F3F8', fontSize: 14 }}>Multi-Provider Failover</div>
+              <div style={{ fontSize: 11, color: '#10B981' }}>2 Active Providers</div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div className="flex items-center justify-between" style={{ padding: '6px 10px', background: 'rgba(255,255,255,0.03)', borderRadius: 6 }}>
+              <span style={{ fontSize: 12, color: '#E8EAF0' }}>Resend API</span>
+              <span className="mono" style={{ fontSize: 10, color: '#10B981' }}>Primary</span>
+            </div>
+            <div className="flex items-center justify-between" style={{ padding: '6px 10px', background: 'rgba(255,255,255,0.03)', borderRadius: 6 }}>
+              <span style={{ fontSize: 12, color: '#E8EAF0' }}>Gmail SMTP</span>
+              <span className="mono" style={{ fontSize: 10, color: '#D6A967' }}>Failover</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Card C: OTP Security Shield */}
+        <div className="glass-card" style={{ borderRadius: 14, padding: '24px', position: 'relative', overflow: 'hidden' }}>
+          <div className="flex items-center gap-3 mb-4">
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(239,68,68,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              🔒
+            </div>
+            <div>
+              <div style={{ fontWeight: 700, color: '#F1F3F8', fontSize: 14 }}>OTP Verification Shield</div>
+              <div style={{ fontSize: 11, color: '#EF4444' }}>Strict Authorization</div>
+            </div>
+          </div>
+          <p style={{ color: '#6B7280', fontSize: 13, lineHeight: 1.6 }}>
+            Every email dispatch is protected by 6-digit dynamic OTP verification sent directly to the sender inbox.
+          </p>
+        </div>
+      </div>
     </div>
   )
 }
