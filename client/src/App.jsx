@@ -98,21 +98,21 @@ function Dashboard({ setPage }) {
 
   return (
     <div style={{ padding: '32px 32px 48px', maxWidth: 1280, margin: '0 auto' }}>
-      {/* Hero Banner */}
+      {/* Hero Banner (Centrally Aligned) */}
       <div
         className="glass-card gold-border"
-        style={{ borderRadius: 16, padding: '36px 40px', marginBottom: 28, position: 'relative', overflow: 'hidden' }}
+        style={{ borderRadius: 16, padding: '48px 40px', marginBottom: 28, position: 'relative', overflow: 'hidden', textAlign: 'center' }}
       >
         <div
           style={{
             position: 'absolute', inset: 0, borderRadius: 16,
-            background: 'linear-gradient(135deg, rgba(214,169,103,0.07) 0%, transparent 60%)',
+            background: 'radial-gradient(circle at center, rgba(214,169,103,0.1) 0%, transparent 70%)',
             pointerEvents: 'none'
           }}
         />
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <div style={{ maxWidth: 720 }}>
-            <div className="flex items-center gap-3 mb-4">
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{ maxWidth: 760, margin: '0 auto' }}>
+            <div className="flex items-center justify-center gap-3 mb-4">
               <span
                 className="status-badge"
                 style={{ background: 'rgba(214,169,103,0.12)', color: '#D6A967', border: '1px solid rgba(214,169,103,0.3)', fontSize: 10 }}
@@ -124,11 +124,11 @@ function Dashboard({ setPage }) {
             <h1
               style={{
                 fontFamily: "'Plus Jakarta Sans', sans-serif",
-                fontSize: 'clamp(22px, 3vw, 32px)',
+                fontSize: 'clamp(24px, 3.5vw, 36px)',
                 fontWeight: 800,
                 color: '#F1F3F8',
-                lineHeight: 1.2,
-                marginBottom: 12,
+                lineHeight: 1.25,
+                marginBottom: 16,
                 letterSpacing: '-0.02em'
               }}
             >
@@ -136,14 +136,14 @@ function Dashboard({ setPage }) {
               <span className="gold-text">MailFreeli Enterprise</span>{' '}
               AI Engine
             </h1>
-            <p style={{ color: '#6B7280', fontSize: 14, lineHeight: 1.7, marginBottom: 20 }}>
+            <p style={{ color: '#9CA3AF', fontSize: 14, lineHeight: 1.8, marginBottom: 24, marginLeft: 'auto', marginRight: 'auto', maxWidth: 680 }}>
               Enterprise-grade SMTP orchestration engine powered by <span style={{ color: '#D6A967' }}>Groq LLaMA-3.3</span> for instant AI draft generation. Seamlessly manage single dispatches and bulk campaigns with intelligent provider routing, OTP security verification, and real-time MongoDB audit logging.
             </p>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center gap-3">
               <button
                 className="btn-primary"
                 onClick={() => setPage('single')}
-                style={{ padding: '10px 24px', borderRadius: 8, fontSize: 13, fontWeight: 700 }}
+                style={{ padding: '12px 28px', borderRadius: 8, fontSize: 14, fontWeight: 700 }}
               >
                 Open Campaign Setup
               </button>
@@ -215,7 +215,7 @@ function Dashboard({ setPage }) {
               <div className="mono" style={{ fontSize: 10, color: '#D6A967' }}>LLaMA-3.3-70B</div>
             </div>
           </div>
-          <p style={{ color: '#6B7280', fontSize: 13, lineHeight: 1.6, marginBottom: 16 }}>
+          <p style={{ color: '#6B7280', fontSize: 13, lineHeight: 1.6 }}>
             Real-time automated content generation with dynamic field replacement and sub-second generation speeds.
           </p>
         </div>
